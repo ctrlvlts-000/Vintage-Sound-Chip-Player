@@ -18,7 +18,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
 2. **Lights show the chip's registers** as the music writes them.
-3. **Synth controls** (4 knobs like Brightness and Pitch, each pointed at any channel) to mess with the sound live, with a Bypass button to hear the original song.
+3. **Synth controls** (4 knobs like Brilliance and Pitch, each pointed at any channel) to mess with the sound live, with a Bypass button to hear the original song.
 4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
 5. Powered from one USB-C cable.
 6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
@@ -184,23 +184,33 @@ supply path and ground return so they don't hum into the audio.
 
 **Decision (Joey, Oct 23):** synth controls only, no direct register editing. The
 knobs change the chip's registers behind the scenes, but you work with musical ideas
-like "Brightness" and "Pitch", never raw register numbers.
+like "Brilliance" and "Pitch", never raw register numbers.
 
 ### 5.1 Four knobs you point at channels
 
-There are just **4 knobs**, each with a fixed job and a small **Assign** button with a light:
+The control level is modeled on the **Yamaha TQ5's "Easy Edit"**: a few musical
+parameters, each moved about ±10 steps from the original sound, with no operators or
+algorithms in sight. There are just **4 knobs**, each with a fixed job and a small
+**Assign** button with a light:
 
-| Knob | Under the hood | Sound |
-| --- | --- | --- |
-| **Brightness** | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
-| **Feedback** | FB offset | Clean to buzzy to noisy |
-| **Envelope** | Attack, decay, sustain, and release rates moved together | Left: short and plucky. Right: soft and long |
-| **Pitch** | Frequency/block offset in semitones (±12) | Pitch down/up |
+| Knob | TQ5 Easy Edit equivalent | Under the hood | Sound |
+| --- | --- | --- | --- |
+| **Brilliance** | Brilliance | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
+| **Tone** | Tone | FB (feedback) offset | Clean to buzzy to noisy |
+| **Envelope** | Attack + Release | Attack and release rates moved together; decay and sustain stay as the song wrote them | Left: snappy, short tails. Right: soft swell, long tails |
+| **Pitch** | (Transpose) | Frequency/block offset in semitones (±12) | Pitch down/up |
+
+Each knob has **21 positions: −10 to +10**, with 0 at the center detent meaning "the song
+as written", matching the TQ5's ±10 Easy Edit range. Pitch uses ±12 semitones instead.
+
+What the TQ5 has that this box leaves out: **Wave** (the YM2612 only makes sine waves, so
+there's nothing to select), **vibrato and tremolo** (dropped by Joey), and the TQ5's
+built-in effects (the YM2612 has none).
 
 **Pointing a knob at a channel:** tap the knob's **Assign** button, then tap a channel
 button (1–6). Tap Assign twice to point it at **all channels**. Each knob remembers its
 channel, so different knobs can work on different channels at once, for example
-Brightness on the bass and Pitch on the lead. The register grid outlines each knob's
+Brilliance on the bass and Pitch on the lead. The register grid outlines each knob's
 channel in that knob's color, so you can see what's pointed where.
 
 ### 5.2 How the knobs behave
