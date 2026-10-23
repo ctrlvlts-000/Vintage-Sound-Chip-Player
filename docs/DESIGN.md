@@ -1,6 +1,6 @@
 # Chip Shrine: YM2612 Player — Proof of Concept Design
 
-Status: Draft v0.2 · Oct 23, 2026 · Owner: Joey
+Status: Draft v0.3 · Oct 23, 2026 · Owner: Joey
 
 > A desktop box with a real Sega Genesis sound chip, the Yamaha YM2612, lit behind
 > a window. It plays VGM files, shows what the chip is doing on a wall of lights,
@@ -18,7 +18,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
 2. **Lights show the chip's registers** as the music writes them.
-3. **Controls over the registers** to mess with the sound live, with one button to return to the original song.
+3. **Synth controls** (knobs like Brightness, Attack, Vibrato) to mess with the sound live, with a Bypass button to hear the original song.
 4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
 5. Powered from one USB-C cable.
 6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
@@ -66,13 +66,13 @@ flowchart LR
         PARSE[VGM parser<br/>unzips VGZ]
         PCM[(PCM sample bank<br/>in RAM)]
         SCHED[Write scheduler<br/>44.1 kHz timeline]
-        MOD[Modifier layer<br/>override, offset,<br/>mute / solo]
+        MOD[Synth layer<br/>knob offsets,<br/>mute / solo]
         SHADOW[(Shadow registers<br/>file values + sent values)]
         DRV[YM2612 driver<br/>bus timing via PIO]
     end
 
     subgraph Panel["Front panel"]
-        CTRL[Knobs, encoder,<br/>buttons]
+        CTRL[Synth knobs, encoder,<br/>buttons]
         SCREEN[Screen]
         GRID[Register light grid]
         BUSLED[Bus + key-on LEDs]
@@ -92,7 +92,7 @@ flowchart LR
     PARSE -- "timed writes" --> SCHED
     PCM -- "DAC bytes" --> SCHED
     SCHED --> MOD
-    CTRL -- "tweaks" --> MOD
+    CTRL -- "knob turns" --> MOD
     CTRL -- "play, seek, next" --> SCHED
     MOD <--> SHADOW
     MOD --> DRV --> BUF --> YM
@@ -116,8 +116,8 @@ value it sent, and lights up the panel to match. The YM2612 makes the actual sou
 | **VGM parser** | Reads the header (clock, length, loop point, title tags) and turns commands into `(wait, port, register, value)` events. Handles YM2612 writes, waits, PCM data blocks, DAC writes, and the DAC stream commands. PSG writes are skipped or routed (see §2). |
 | **PCM bank** | Holds the song's sample data in RAM so drum and voice samples can be fed to the DAC at full speed. Some VGMs carry several hundred KB of samples, so the board should have PSRAM. |
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time and handles play, pause, stop, loop, A-B repeat. |
-| **Modifier layer** | Applies live tweaks to each write before it reaches the chip (§5). |
-| **Shadow registers** | Two copies of all ~320 registers: what the file last wrote, and what was actually sent. Drives seeking, reset, and the lights. |
+| **Synth layer** | Applies the knob offsets, mutes, and channel select to each write before it reaches the chip (§5). |
+| **Shadow registers** | Two copies of all ~320 registers: what the file last wrote, and what was actually sent. Drives seeking, bypass, and the lights. |
 | **YM2612 driver** | Pin-level bus writes via PIO: set A1/A0, put data on D0–D7, pulse /WR, then wait for the busy bit to clear. Also reset (/IC) and silence. |
 | **UI** | Runs on core 0: screen, controls, LED grid, bus LEDs. Never blocks a chip write. |
 
@@ -164,8 +164,8 @@ CHANNEL   freq · block · FB/ALG · pan/LFO sens (one cell each)
 
 - **Brightness** = the register's current value.
 - **Flash** = the register was just written; it fades over about 100 ms.
-- **Color** = who set it: warm white for the song, amber for a value you've overridden, blue for an offset.
-- The **selected register** (§5) blinks, so you can see what the encoder is pointing at.
+- **Color** = who set it: warm white when the value is the song's own, amber when a knob is bending it.
+- The **selected channel** (§5.1) is outlined, so you can see which columns the knobs affect.
 
 ### 4.2 Bus blinkenlights
 
@@ -182,47 +182,52 @@ supply path and ground return so they don't hum into the audio.
 
 ## 5. The controls
 
-**Proposal:** a mix of "grab anything" and "big fun knobs".
+**Decision (Joey, Oct 23):** synth controls only, no direct register editing. The
+knobs change the chip's registers behind the scenes, but you work with musical ideas
+like "Brightness" and "Attack", never raw register numbers.
 
-### 5.1 Grab any register
+### 5.1 How the knobs behave
 
-- **Encoder + screen:** turn to move the cursor around the register grid, click to grab that register.
-- Once grabbed, turn to set its value. A **mode button** cycles **Override** (hold my value, ignore the song) → **Offset** (add my amount to whatever the song writes) → **Release**.
-- The screen shows the register's name, the song's value, your value, and what it does in one line ("Op 2 multiplier: harmonic ×3").
+- Every knob is centered on **"the song as written"**. Turning it bends the sound up or down from there, and the song keeps playing its own changes underneath.
+- Knobs are potentiometers with a **center detent**, so the "as written" position is easy to feel.
+- Knobs act on the **selected channel** or **all channels**. A **Channel** button steps through All → 1 → 2 … → 6, and the screen and grid show which one is selected.
+- **Bypass** button: hear the untouched song while held (or toggled), to compare.
+- Settings that would produce silence or a painful sound are clamped by the firmware, and the output stage has a limiter.
 
-### 5.2 Macro knobs
+### 5.2 The 12 synth knobs
 
-8 knobs for the changes that sound best. They act on the **selected channel** or on **all channels** (a toggle button):
+Laid out in two rows of six.
 
-| Knob | What it changes | Sound |
-| --- | --- | --- |
-| Algorithm | ALG (0–7) | How the 4 operators are wired; totally changes the instrument |
-| Feedback | FB | Op 1 self-modulation; clean to buzzy to noisy |
-| Brightness | TL of *modulator* operators only | Dull to bright/harsh. The firmware knows the algorithm, so it never touches the carriers (which would just change volume) |
-| Harmonics | MUL offset | Shifts overtones; bells, metallic tones |
-| Attack | AR offset | Plucky vs. swelling |
-| Release | RR offset | Short vs. ringing tails |
-| LFO | LFO rate + AMS/PMS | Vibrato and tremolo, even on songs that never used it |
-| Transpose | Frequency/block offset | Pitch up/down in semitones; detune in fine steps |
+| # | Knob | Under the hood | Sound |
+| --- | --- | --- | --- |
+| 1 | Algorithm | ALG. Fully left = song's own; then the 8 algorithms | How the 4 operators are wired; changes the whole instrument |
+| 2 | Feedback | FB offset | Clean to buzzy to noisy |
+| 3 | Brightness | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
+| 4 | Harmonics | MUL offset | Overtones; bells, metallic tones |
+| 5 | Detune | DT + fine frequency offset | Chorus-like thickness |
+| 6 | Transpose | Frequency/block offset in semitones (±12) | Pitch up/down |
+| 7 | Attack | AR offset | Plucky vs. swelling |
+| 8 | Decay | DR / SL offset | How fast the note falls after the hit |
+| 9 | Sustain | SR offset | How long the held part lasts |
+| 10 | Release | RR offset | Short vs. ringing tails |
+| 11 | Vibrato | LFO rate + PMS (pitch sensitivity) | Pitch wobble, even on songs that never used it |
+| 12 | Tremolo | LFO rate + AMS (amplitude sensitivity) | Volume wobble |
 
-### 5.3 Buttons
+Plus an analog **volume** knob on the output.
 
+### 5.3 Buttons and encoder
+
+- **Encoder + screen:** browse folders and tracks only.
 - **Transport:** previous, rewind, play/pause, stop, fast-forward, next.
-- **Channel mute 1–6 + DAC:** tap to mute, hold to solo. Each button sits under its channel's column on the grid.
-- **Snapshot:** save the current tweaks for this song to the SD card; long press to recall.
-- **Reset:** drop every tweak and re-send the song's own values. The sound snaps back instantly.
-- **Loop / A-B:** set loop points for tweaking one section over and over.
+- **Channel mute 1–6 + DAC:** tap to mute, hold to solo. Each sits under its channel's column on the grid.
+- **Channel select** and **Bypass** (§5.1).
+- **Loop / A-B:** loop one section while you play with the knobs.
 
-### 5.4 Everything that's possible
+### 5.4 Later: expert mode
 
-Every YM2612 register can be grabbed through §5.1. The ones worth exploring:
-
-- **Per operator:** total level (TL), multiplier (MUL), detune (DT), attack/decay/sustain/release rates, sustain level, key scaling, AM enable, SSG-EG envelope modes.
-- **Per channel:** algorithm, feedback, stereo pan (left/right/both), LFO pitch and amplitude sensitivity, frequency and octave.
-- **Global:** LFO on/off and rate, channel 3 special mode (each operator gets its own pitch), DAC on/off.
-
-Hand-written registers can produce silence or very loud harsh tones. **Reset** always
-recovers, and the output stage has a limiter so a bad setting can't blast headphones.
+Direct register editing (the "POKE a value" idea from the original notes) is left out of the
+proof of concept. It can come back later as a hidden expert mode on the same hardware,
+since the firmware already keeps every register in its shadow table.
 
 ## 6. Hardware for the proof of concept
 
@@ -243,7 +248,7 @@ RP2350 ── PIO bus ── level shifters ── YM2612 (socketed) ── op-a
 | Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp with volume knob |
 | Screen | 2.0"–2.8" color IPS (SPI) |
 | Lights | 32×8 WS2812 panel, 11 + 7 discrete LEDs |
-| Controls | 1 clickable encoder, 8 knobs (potentiometers), about 20 buttons |
+| Controls | 12 center-detent potentiometers, 1 volume pot, 1 clickable encoder, about 18 buttons |
 | Power | USB-C with 5.1 kΩ resistors on CC for 5V; needs a 3A-capable supply because of the LEDs |
 | Storage | microSD slot, reachable from outside the case |
 | Build | Protoboard or a carrier board for the RP2350 and chip; the PCB comes later |
@@ -263,7 +268,7 @@ What the case needs to hold and expose:
 - **Chip window:** the YM2612 visible under a clear window with warm edge lighting raking across the top so the markings glow.
 - **Register grid:** 32×8 panel behind a diffuser, ideally with a printed light-blocking grid so each cell reads as its own square. Column and row labels printed or engraved on the panel (§4.1).
 - **Bus and key-on LED rows** near the grid.
-- **Screen**, **encoder**, **8 knobs**, **~20 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
+- **Screen**, **encoder**, **12 synth knobs in two rows of six**, **volume knob**, **~18 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
 - **Rear or side:** USB-C, 3.5 mm line out, headphone jack + volume, microSD slot.
 - **Inside:** standoffs for the RP2350 board and the chip/audio board; keep the audio board away from the LED panel's power wiring.
 - **Style ideas from the notes:** beige or black finish, period font, the YM2612 pinout printed beside the window.
@@ -282,7 +287,7 @@ Each one ends with something you can hear or see.
 | M3 | **Transport + screen** | Track list, play/pause/stop/next/prev, title and time on screen |
 | M4 | **Shadow registers + seek** | Seek, FF/REW, loop, A-B repeat without glitches |
 | M5 | **Lights** | Register grid, bus LEDs, and key-on LEDs working; parts measured for the enclosure |
-| M6 | **Controls** | Grab-any-register, macro knobs, mute/solo, snapshot, reset |
+| M6 | **Synth controls** | 12 knobs, channel select, bypass, mute/solo |
 | M7 | **Clean power + audio** | USB-C only, LED brightness cap, no audible hum or LED noise |
 | M8 | **In the box** | Everything mounted in Joey's 3D-printed enclosure |
 
@@ -291,14 +296,13 @@ Each one ends with something you can hear or see.
 - Other chips (SN76489, AY-3-8910, OPL2, POKEY, SID, SCC) and a swappable chip-module design.
 - Custom PCB.
 - USB drag-and-drop file loading.
-- Serial PEEK/POKE monitor, expansion header, USB keyboard input.
+- Expert mode for direct register editing (§5.4), serial PEEK/POKE monitor, expansion header, USB keyboard input.
 - Isolated audio output for ground-loop-free use with a computer and an amp.
 
 ## 10. Open questions
 
 - [ ] Genesis PSG parts: ignore (A), add a real SN76489 (B), or build A with room for B (C)?
 - [ ] Register grid as proposed (32×8 LED panel), or something different?
-- [ ] Controls: 8 macro knobs plus encoder as proposed, or encoder only to keep the panel simple?
 - [ ] Headphone amp, or line out only?
 
 ## 11. Glossary
