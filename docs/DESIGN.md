@@ -18,7 +18,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
 2. **Lights show the chip's registers** as the music writes them.
-3. **Synth controls** (knobs like Brightness, Attack, Release) to mess with the sound live, with a Bypass button to hear the original song.
+3. **Synth controls** (4 knobs like Brightness and Pitch, each pointed at any channel) to mess with the sound live, with a Bypass button to hear the original song.
 4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
 5. Powered from one USB-C cable.
 6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
@@ -116,7 +116,7 @@ value it sent, and lights up the panel to match. The YM2612 makes the actual sou
 | **VGM parser** | Reads the header (clock, length, loop point, title tags) and turns commands into `(wait, port, register, value)` events. Handles YM2612 writes, waits, PCM data blocks, DAC writes, and the DAC stream commands. PSG writes are skipped or routed (see §2). |
 | **PCM bank** | Holds the song's sample data in RAM so drum and voice samples can be fed to the DAC at full speed. Some VGMs carry several hundred KB of samples, so the board should have PSRAM. |
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time and handles play, pause, stop, loop, A-B repeat. |
-| **Synth layer** | Applies the knob offsets, mutes, and channel select to each write before it reaches the chip (§5). |
+| **Synth layer** | Applies each knob's offset to its assigned channel, plus mutes, to each write before it reaches the chip (§5). |
 | **Shadow registers** | Two copies of all ~320 registers: what the file last wrote, and what was actually sent. Drives seeking, bypass, and the lights. |
 | **YM2612 driver** | Pin-level bus writes via PIO: set A1/A0, put data on D0–D7, pulse /WR, then wait for the busy bit to clear. Also reset (/IC) and silence. |
 | **UI** | Runs on core 0: screen, controls, LED grid, bus LEDs. Never blocks a chip write. |
@@ -184,39 +184,40 @@ supply path and ground return so they don't hum into the audio.
 
 **Decision (Joey, Oct 23):** synth controls only, no direct register editing. The
 knobs change the chip's registers behind the scenes, but you work with musical ideas
-like "Brightness" and "Attack", never raw register numbers.
+like "Brightness" and "Pitch", never raw register numbers.
 
-### 5.1 How the knobs behave
+### 5.1 Four knobs you point at channels
 
-- Every knob is centered on **"the song as written"**. Turning it bends the sound up or down from there, and the song keeps playing its own changes underneath.
+There are just **4 knobs**, each with a fixed job and a small **Assign** button with a light:
+
+| Knob | Under the hood | Sound |
+| --- | --- | --- |
+| **Brightness** | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
+| **Feedback** | FB offset | Clean to buzzy to noisy |
+| **Envelope** | Attack, decay, sustain, and release rates moved together | Left: short and plucky. Right: soft and long |
+| **Pitch** | Frequency/block offset in semitones (±12) | Pitch down/up |
+
+**Pointing a knob at a channel:** tap the knob's **Assign** button, then tap a channel
+button (1–6). Tap Assign twice to point it at **all channels**. Each knob remembers its
+channel, so different knobs can work on different channels at once, for example
+Brightness on the bass and Pitch on the lead. The register grid outlines each knob's
+channel in that knob's color, so you can see what's pointed where.
+
+### 5.2 How the knobs behave
+
+- Every knob is centered on **"the song as written"**. Turning it bends the sound from there, and the song keeps playing its own changes underneath.
 - Knobs are potentiometers with a **center detent**, so the "as written" position is easy to feel.
-- Knobs act on the **selected channel** or **all channels**. A **Channel** button steps through All → 1 → 2 … → 6, and the screen and grid show which one is selected.
-- **Bypass** button: hear the untouched song while held (or toggled), to compare.
+- When a knob is re-assigned, the old channel goes back to the song's own sound.
+- **Bypass** button: hear the untouched song while held, to compare.
 - Settings that would produce silence or a painful sound are clamped by the firmware, and the output stage has a limiter.
-
-### 5.2 The 8 synth knobs
-
-Eight knobs total, in two rows of four (Joey's limit: 8 knobs max). Volume is set with
-the encoder from the now-playing screen, so it doesn't need its own knob. Songs that use
-the chip's own vibrato or tremolo (LFO) still play it as written; there are no knobs for it.
-
-| # | Knob | Under the hood | Sound |
-| --- | --- | --- | --- |
-| 1 | Algorithm | ALG. Fully left = song's own; then the 8 algorithms | How the 4 operators are wired; changes the whole instrument |
-| 2 | Feedback | FB offset | Clean to buzzy to noisy |
-| 3 | Brightness | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
-| 4 | Harmonics | MUL offset | Overtones; bells, metallic tones |
-| 5 | Transpose | Frequency/block offset in semitones (±12) | Pitch up/down |
-| 6 | Attack | AR offset | Plucky vs. swelling |
-| 7 | Decay | DR, SL, and SR offsets together | Short and punchy vs. long and held |
-| 8 | Release | RR offset | Short vs. ringing tails |
+- Songs that use the chip's own vibrato or tremolo still play it as written.
 
 ### 5.3 Buttons and encoder
 
 - **Encoder + screen:** browse folders and tracks; on the now-playing screen, turning it sets volume.
 - **Transport:** previous, rewind, play/pause, stop, fast-forward, next.
-- **Channel mute 1–6 + DAC:** tap to mute, hold to solo. Each sits under its channel's column on the grid.
-- **Channel select** and **Bypass** (§5.1).
+- **Channel buttons 1–6 + DAC:** tap to mute, hold to solo, or pick a channel right after pressing a knob's Assign. Each sits under its channel's column on the grid.
+- **Assign** (one per knob) and **Bypass** (§5.1–5.2).
 - **Loop / A-B:** loop one section while you play with the knobs.
 
 ### 5.4 Later: expert mode
@@ -244,7 +245,7 @@ RP2350 ── PIO bus ── level shifters ── YM2612 (socketed) ── op-a
 | Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp; volume through a digitally controlled potentiometer set from the encoder |
 | Screen | 2.0"–2.8" color IPS (SPI) |
 | Lights | 32×8 WS2812 panel, 11 + 7 discrete LEDs |
-| Controls | 8 center-detent potentiometers, 1 clickable encoder, about 18 buttons |
+| Controls | 4 center-detent potentiometers, 1 clickable encoder, about 21 buttons (4 with indicator LEDs) |
 | Power | USB-C with 5.1 kΩ resistors on CC for 5V; needs a 3A-capable supply because of the LEDs |
 | Storage | microSD slot, reachable from outside the case |
 | Build | Protoboard or a carrier board for the RP2350 and chip; the PCB comes later |
@@ -264,7 +265,7 @@ What the case needs to hold and expose:
 - **Chip window:** the YM2612 visible under a clear window with warm edge lighting raking across the top so the markings glow.
 - **Register grid:** 32×8 panel behind a diffuser, ideally with a printed light-blocking grid so each cell reads as its own square. Column and row labels printed or engraved on the panel (§4.1).
 - **Bus and key-on LED rows** near the grid.
-- **Screen**, **encoder**, **8 synth knobs in two rows of four**, **~18 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
+- **Screen**, **encoder**, **4 synth knobs, each with an Assign button**, **~18 buttons**, with the 7 channel buttons lined up under the grid's channel columns.
 - **Rear or side:** USB-C, 3.5 mm line out, headphone jack + volume, microSD slot.
 - **Inside:** standoffs for the RP2350 board and the chip/audio board; keep the audio board away from the LED panel's power wiring.
 - **Style ideas from the notes:** beige or black finish, period font, the YM2612 pinout printed beside the window.
@@ -283,7 +284,7 @@ Each one ends with something you can hear or see.
 | M3 | **Transport + screen** | Track list, play/pause/stop/next/prev, title and time on screen |
 | M4 | **Shadow registers + seek** | Seek, FF/REW, loop, A-B repeat without glitches |
 | M5 | **Lights** | Register grid, bus LEDs, and key-on LEDs working; parts measured for the enclosure |
-| M6 | **Synth controls** | 8 knobs, channel select, bypass, mute/solo |
+| M6 | **Synth controls** | 4 assignable knobs, bypass, mute/solo |
 | M7 | **Clean power + audio** | USB-C only, LED brightness cap, no audible hum or LED noise |
 | M8 | **In the box** | Everything mounted in Joey's 3D-printed enclosure |
 
