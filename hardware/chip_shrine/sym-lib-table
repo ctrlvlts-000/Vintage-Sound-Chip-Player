@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "chip_shrine")(type "KiCad")(uri "${KIPRJMOD}/chip_shrine.kicad_sym")(options "")(descr "Chip Shrine custom symbols: YM2612 and Pico 2 module"))
+)

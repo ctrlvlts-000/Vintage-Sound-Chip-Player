@@ -316,8 +316,8 @@ Each one ends with something you can hear or see.
 
 ## 10. Open questions
 
-- [ ] Register grid as proposed (32×8 LED panel), or something different?
-- [ ] Headphone amp, or line out only?
+- [ ] Register grid as proposed (32×8 LED panel), or something different? The schematic draws the 32×8 panel; the layout can still change in firmware.
+- [x] Headphone amp, or line out only? **One headphone-capable 3.5 mm jack that also works as line out** (Joey, Oct 23). See [hardware/](../hardware/README.md).
 
 ## 11. Glossary
 
