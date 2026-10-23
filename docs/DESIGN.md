@@ -194,9 +194,11 @@ like "Brightness" and "Attack", never raw register numbers.
 - **Bypass** button: hear the untouched song while held (or toggled), to compare.
 - Settings that would produce silence or a painful sound are clamped by the firmware, and the output stage has a limiter.
 
-### 5.2 The 10 synth knobs
+### 5.2 The 8 synth knobs
 
-Laid out in two rows of five. Songs that use the chip's own vibrato or tremolo (LFO) still play it as written; there are no knobs for it.
+Eight knobs total, in two rows of four (Joey's limit: 8 knobs max). Volume is set with
+the encoder from the now-playing screen, so it doesn't need its own knob. Songs that use
+the chip's own vibrato or tremolo (LFO) still play it as written; there are no knobs for it.
 
 | # | Knob | Under the hood | Sound |
 | --- | --- | --- | --- |
@@ -204,18 +206,14 @@ Laid out in two rows of five. Songs that use the chip's own vibrato or tremolo (
 | 2 | Feedback | FB offset | Clean to buzzy to noisy |
 | 3 | Brightness | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
 | 4 | Harmonics | MUL offset | Overtones; bells, metallic tones |
-| 5 | Detune | DT + fine frequency offset | Chorus-like thickness |
-| 6 | Transpose | Frequency/block offset in semitones (±12) | Pitch up/down |
-| 7 | Attack | AR offset | Plucky vs. swelling |
-| 8 | Decay | DR / SL offset | How fast the note falls after the hit |
-| 9 | Sustain | SR offset | How long the held part lasts |
-| 10 | Release | RR offset | Short vs. ringing tails |
-
-Plus an analog **volume** knob on the output.
+| 5 | Transpose | Frequency/block offset in semitones (±12) | Pitch up/down |
+| 6 | Attack | AR offset | Plucky vs. swelling |
+| 7 | Decay | DR, SL, and SR offsets together | Short and punchy vs. long and held |
+| 8 | Release | RR offset | Short vs. ringing tails |
 
 ### 5.3 Buttons and encoder
 
-- **Encoder + screen:** browse folders and tracks only.
+- **Encoder + screen:** browse folders and tracks; on the now-playing screen, turning it sets volume.
 - **Transport:** previous, rewind, play/pause, stop, fast-forward, next.
 - **Channel mute 1–6 + DAC:** tap to mute, hold to solo. Each sits under its channel's column on the grid.
 - **Channel select** and **Bypass** (§5.1).
@@ -243,10 +241,10 @@ RP2350 ── PIO bus ── level shifters ── YM2612 (socketed) ── op-a
 | Chip socket | 24-pin ZIF or turned-pin socket, centered under the window |
 | Clock | 7.67 MHz crystal oscillator can |
 | Level shifting | 74HCT-series buffers for 3.3V → 5V writes; a 5V-tolerant buffer or divider for reading the busy bit. Confirm thresholds against the datasheet. |
-| Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp with volume knob |
+| Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp; volume through a digitally controlled potentiometer set from the encoder |
 | Screen | 2.0"–2.8" color IPS (SPI) |
 | Lights | 32×8 WS2812 panel, 11 + 7 discrete LEDs |
-| Controls | 10 center-detent potentiometers, 1 volume pot, 1 clickable encoder, about 18 buttons |
+| Controls | 8 center-detent potentiometers, 1 clickable encoder, about 18 buttons |
 | Power | USB-C with 5.1 kΩ resistors on CC for 5V; needs a 3A-capable supply because of the LEDs |
 | Storage | microSD slot, reachable from outside the case |
 | Build | Protoboard or a carrier board for the RP2350 and chip; the PCB comes later |
@@ -266,7 +264,7 @@ What the case needs to hold and expose:
 - **Chip window:** the YM2612 visible under a clear window with warm edge lighting raking across the top so the markings glow.
 - **Register grid:** 32×8 panel behind a diffuser, ideally with a printed light-blocking grid so each cell reads as its own square. Column and row labels printed or engraved on the panel (§4.1).
 - **Bus and key-on LED rows** near the grid.
-- **Screen**, **encoder**, **10 synth knobs in two rows of five**, **volume knob**, **~18 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
+- **Screen**, **encoder**, **8 synth knobs in two rows of four**, **~18 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
 - **Rear or side:** USB-C, 3.5 mm line out, headphone jack + volume, microSD slot.
 - **Inside:** standoffs for the RP2350 board and the chip/audio board; keep the audio board away from the LED panel's power wiring.
 - **Style ideas from the notes:** beige or black finish, period font, the YM2612 pinout printed beside the window.
@@ -285,7 +283,7 @@ Each one ends with something you can hear or see.
 | M3 | **Transport + screen** | Track list, play/pause/stop/next/prev, title and time on screen |
 | M4 | **Shadow registers + seek** | Seek, FF/REW, loop, A-B repeat without glitches |
 | M5 | **Lights** | Register grid, bus LEDs, and key-on LEDs working; parts measured for the enclosure |
-| M6 | **Synth controls** | 10 knobs, channel select, bypass, mute/solo |
+| M6 | **Synth controls** | 8 knobs, channel select, bypass, mute/solo |
 | M7 | **Clean power + audio** | USB-C only, LED brightness cap, no audible hum or LED noise |
 | M8 | **In the box** | Everything mounted in Joey's 3D-printed enclosure |
 
