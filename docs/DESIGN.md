@@ -1,13 +1,14 @@
-# Chip Shrine: Vintage Sound Chip Player — Design Doc
+# Chip Shrine: YM2612 Player — Proof of Concept Design
 
-Status: Draft v0.1 · Oct 23, 2026 · Owner: Joey
+Status: Draft v0.2 · Oct 23, 2026 · Owner: Joey
 
-> An iPod for sound chips. A desktop box where a real vintage chip, lit behind a
-> glass window, plays your own music files while you reach into its registers.
+> A desktop box with a real Sega Genesis sound chip, the Yamaha YM2612, lit behind
+> a window. It plays VGM files, shows what the chip is doing on a wall of lights,
+> and lets you grab the chip's registers to bend the sound while a song plays.
 
-This doc sets out **which chips the player supports**, **how it looks**, and
-**how it works**, broken into milestones small enough to build one at a time.
-Items marked **Decision** are proposals; items marked **Open** still need a call.
+This is a **proof of concept** for one chip only. Swappable chips and a product
+series are deliberately out of scope (see §9). Items marked **Proposal** are
+recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 ---
 
@@ -15,286 +16,298 @@ Items marked **Decision** are proposals; items marked **Open** still need a call
 
 **Goals**
 
-- Real silicon only. The chip makes the sound live from register writes; nothing is emulated or pre-recorded.
-- Plays user-provided files (VGM, SID, tracker rips) from an SD card, with CD-player style transport.
-- Live tinkering: override, offset, mute/solo, snapshot, and reset the chip's registers while a song plays.
-- One box per chip, sharing one design language so the series is collectible.
-- Runs from a single USB-C cable.
-- Open firmware and schematics, with a labeled header for hackers.
+1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
+2. **Lights show the chip's registers** as the music writes them.
+3. **Controls over the registers** to mess with the sound live, with one button to return to the original song.
+4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
+5. Powered from one USB-C cable.
+6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
 
-**Non-goals (v1)**
+**Non-goals for the proof of concept**
 
-- No MIDI, CV, or Eurorack I/O.
-- No emulation fallback if a chip is missing or dead.
-- No battery, Wi-Fi, Bluetooth, or companion app.
-- No cross-chip playback (a YM2612 box only plays Genesis/YM2612 music).
+- Other chips, swappable chip modules, or a shared platform for a series.
+- Formats other than VGM/VGZ.
+- MIDI, CV, Eurorack, Wi-Fi, Bluetooth, battery, companion app.
+- A custom PCB. Dev boards and protoboard are fine; a PCB comes after the concept works.
+- Emulation of any kind. The sound comes from the real chip.
 
-## 2. Supported chips
+## 2. The chip: YM2612 at a glance
 
-The series targets seven chips. Each box is a "chip module" on a shared main board
-(see §5), so adding a chip means a new module board plus a firmware driver.
+What the design has to work with:
 
-| Order | Chip | Found in | File formats | Supply | Difficulty | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | **SN76489** | Master System, BBC Micro | VGM/VGZ | 5V | Low | 3 square + 1 noise; write-only; easy to drive |
-| 2 | AY-3-8910 / YM2149 | ZX Spectrum, Atari ST, MSX | VGM, YM, PT3* | 5V | Low | Readable registers; lots of prior art |
-| 3 | POKEY | Atari 8-bit | SAP, VGM | 5V | Medium | Needs 1.79 MHz clock; distinctive sound |
-| 4 | YM3812 (OPL2) | AdLib, Sound Blaster | VGM, DRO, IMF | 5V + DAC | Medium | Needs external YM3014 DAC; FM |
-| 5 | YM2612 | Sega Genesis | VGM/VGZ | 5V | High | Hero chip; strict write timing; DAC + PCM channel |
-| 6 | SID 6581 / 8580 | Commodore 64 | SID (PSID/RSID) | 5V + 12V (6581) / 9V (8580) | High | Iconic, pricey; needs boost rail; PSID needs a 6502 player (see §4.3) |
-| 7 | Konami SCC | Konami MSX carts | VGM, KSS* | 5V | High | Rare; sourcing risk |
+| Fact | Why it matters |
+| --- | --- |
+| 6 FM channels, each with 4 operators | Lots of sound-shaping registers to light up and control |
+| Channel 6 can switch to an 8-bit DAC for samples | Genesis drums and voices; needs fast, steady writes |
+| Two register banks ("ports"): port 0 = channels 1–3 + global settings, port 1 = channels 4–6 | The driver addresses ~320 registers through 2 address lines |
+| 24-pin DIP, 5V, NMOS | Socket it; level-shift from the 3.3V microcontroller |
+| Clock about 7.67 MHz (NTSC Genesis) | Needs its own oscillator; the VGM header states the exact clock |
+| Write-only registers; only a status byte can be read | Player must keep its own copy of every register (shadow registers) |
+| Needs a short wait after each write (busy flag) | Driver polls the busy bit or enforces a measured minimum gap |
+| Analog outputs MOL / MOR with the chip's famous slightly gritty DAC | Needs a buffered output stage; the grit is part of the charm |
 
-\* Formats marked with an asterisk are tracker/player formats that need a small
-per-format player routine in firmware, not just a register-stream reader.
-Phase 1 supports **VGM only**, because VGM is already a timed list of register
-writes for every chip above except SID.
+**Open — the Genesis PSG.** Genesis music also uses a second chip, the SN76489-style
+PSG, for some square-wave parts, hi-hats, and effects. VGM files contain those writes
+too. Options:
 
-**Decision (pending Joey):** pilot chip is the **SN76489**. It is digital, 5V,
-cheap to verify, and has thousands of Master System and BBC VGM rips. Proving the
-whole pipeline on it de-risks firmware and hardware before the harder chips.
+- **A (proposal for v1):** ignore PSG writes. Most songs still sound complete, some lose a part; the screen shows a small "PSG parts muted" note.
+- **B:** add a real SN76489 next to the YM2612. Songs are complete; adds a chip, a second output to mix, and a little firmware.
+- **C:** leave room for B on the board and in the enclosure, build A first.
 
-## 3. How it looks
+## 3. How it works
 
-A grown-up desktop instrument: part synth, part retro computer, part museum piece,
-with the chip as the centerpiece.
-
-### 3.1 Front panel layout
-
-```
- ┌──────────────────────────────────────────────────────────────────┐
- │  CHIP SHRINE                                   SN76489  № 0042   │
- │  ┌───────────────┐   ● ● ● ● ● ● ● ●   DATA                       │
- │  │               │   ● ● ● ● ● ● ● ●   ADDR / CTRL               │
- │  │  [ the chip ] │   ●  CLK  ●  WE                               │
- │  │  lit window   │   ┌──────────────────────────┐                │
- │  │               │   │ 03  Green Hill (Zone 1)  │   ( ENCODER )  │
- │  └───────────────┘   │ 01:24 / 02:51   LOOP A-B │                │
- │                      │ CH1 ▮▮▮▯ CH2 ▮▯▯▯ ...    │                │
- │                      └──────────────────────────┘                │
- │   |◀◀   ◀◀   ▶❙❙   ■   ▶▶   ▶▶|      [MUTE 1-4]  [SNAP]  [RESET]   │
- └──────────────────────────────────────────────────────────────────┘
-          pinout silkscreen ▸ printed register map on the lid
-```
-
-### 3.2 Visual elements
-
-- **Chip window:** a cut-out with warm edge lighting. A black plastic package won't glow from behind, so light rakes across the top and the markings shine. Same window size and position on every box in the series.
-- **Blinkenlights:** LEDs on the data bus, address/control lines, and clock, in the spirit of Altair and PDP-8 panels. They are driven from buffered copies of the bus, never from the chip pins directly.
-- **Display:** a 2.4"–2.8" color IPS screen (320×240) showing title, time, loop state, per-channel activity, and register values. No sleep mode.
-- **Finish:** three options for the series: beige, black, brushed metal. Period-correct typeface (for example a DIN or Eurostile-like face).
-- **Silkscreen:** the chip's datasheet pinout printed on the case beside the window.
-- **Collector details:** a plate with the chip's date code and the unit's serial number, a printed register map on the lid underside, and a datasheet booklet in the box.
-
-### 3.3 Controls
-
-**Decision:** one **clickable rotary encoder plus the screen** is the main control
-(browse library, pick a register, change its value). Dedicated buttons cover the
-things users do constantly: transport (prev, rew, play/pause, stop, ff, next),
-per-channel mute, snapshot, and reset. Physical knobs for "favorite" registers
-are a later add-on via the expansion header (see §5.4), because the useful
-registers differ per chip.
-
-## 4. How it works
-
-### 4.1 Audio pipeline
+### 3.1 Audio pipeline
 
 ```mermaid
 flowchart LR
-    subgraph Storage
-        SD[(SD card<br/>VGM / SID / tracker files)]
-        USB[USB-C<br/>drag and drop]
-    end
+    SD[(microSD card<br/>VGM / VGZ files)]
 
     subgraph MCU["Microcontroller (RP2350)"]
-        LIB[Library index<br/>titles, durations]
-        PARSE[File parser<br/>VGM / VGZ decoder]
+        PARSE[VGM parser<br/>unzips VGZ]
+        PCM[(PCM sample bank<br/>in RAM)]
         SCHED[Write scheduler<br/>44.1 kHz timeline]
         MOD[Modifier layer<br/>override, offset,<br/>mute / solo]
-        SHADOW[(Shadow registers<br/>file state + live state)]
-        DRV[Chip driver<br/>bus timing via PIO]
+        SHADOW[(Shadow registers<br/>file values + sent values)]
+        DRV[YM2612 driver<br/>bus timing via PIO]
     end
 
     subgraph Panel["Front panel"]
-        CTRL[Encoder + buttons]
-        UI[Display + LEDs]
+        CTRL[Knobs, encoder,<br/>buttons]
+        SCREEN[Screen]
+        GRID[Register light grid]
+        BUSLED[Bus + key-on LEDs]
     end
 
-    subgraph ChipModule["Chip module"]
-        BUF[Level-shifting<br/>bus buffers]
-        CHIP{{Real sound chip}}
-        CLK[Crystal oscillator]
-        AOUT[Analog output stage<br/>filter + line amp]
+    subgraph Chip["Chip board"]
+        BUF[Level shifters]
+        YM{{YM2612}}
+        OSC[7.67 MHz oscillator]
+        AOUT[Output stage<br/>buffer + filter]
     end
 
-    OUT((3.5 mm line /<br/>headphone out))
+    OUT((3.5 mm<br/>line / headphone))
 
-    USB --> SD
-    SD --> LIB --> PARSE --> SCHED
-    SCHED -- "timed register writes" --> MOD
-    CTRL -- "tweaks, transport" --> MOD
-    CTRL -- "seek, play, pause" --> SCHED
+    SD --> PARSE
+    PARSE -- "sample data" --> PCM
+    PARSE -- "timed writes" --> SCHED
+    PCM -- "DAC bytes" --> SCHED
+    SCHED --> MOD
+    CTRL -- "tweaks" --> MOD
+    CTRL -- "play, seek, next" --> SCHED
     MOD <--> SHADOW
-    MOD --> DRV --> BUF --> CHIP
-    CLK --> CHIP
-    CHIP -- "raw analog audio" --> AOUT --> OUT
-    SHADOW --> UI
-    BUF -. "bus activity" .-> UI
+    MOD --> DRV --> BUF --> YM
+    OSC --> YM
+    YM -- "analog L/R" --> AOUT --> OUT
+    SHADOW --> GRID
+    SHADOW --> SCREEN
+    DRV --> BUSLED
 ```
 
-In plain words: the microcontroller reads a music file, works out *when* each
-register write should happen, lets the user's tweaks alter those writes, keeps a
-copy of every register's value, and then wiggles the real chip's pins to make the
-write. The chip produces the sound, which is cleaned up and sent to the output jack.
+In plain words: the microcontroller reads a VGM file, which is a list of "write
+this value to this register, then wait this long". It plays those writes at the
+right moments, lets your tweaks change them on the way through, remembers every
+value it sent, and lights up the panel to match. The YM2612 makes the actual sound.
 
-### 4.2 Firmware modules
+### 3.2 Firmware modules
 
 | Module | Job |
 | --- | --- |
-| **Storage** | FAT32 on SD (FatFs). Scans folders, builds a cached library index. |
-| **USB** | USB mass storage so the SD card shows up as a drive on a computer. Playback pauses while the host has the card mounted. |
-| **Parser** | Turns a file into a stream of `(wait, register, value)` events. VGZ is gunzipped on the fly. One parser per format, behind a common interface. |
-| **Scheduler** | Runs on its own core. Releases each event at the exact sample time (VGM uses 44.1 kHz ticks). Handles play, pause, stop, loop, A-B repeat. |
-| **Modifier layer** | Applies live tweaks to each write before it reaches the chip (see §4.4). |
-| **Shadow registers** | Two tables: what the *file* last wrote, and what was *actually sent*. Needed because most of these chips are write-only. |
-| **Chip driver** | One per chip. Knows the bus protocol, write timing, register map, and how to silence the chip. Uses RP2350 PIO for precise bus timing. |
-| **UI** | Screen, encoder, buttons, and LEDs. Runs on the other core so drawing never delays a write. |
+| **Storage** | FAT32 microSD (FatFs). Scans folders and builds a track list. |
+| **VGM parser** | Reads the header (clock, length, loop point, title tags) and turns commands into `(wait, port, register, value)` events. Handles YM2612 writes, waits, PCM data blocks, DAC writes, and the DAC stream commands. PSG writes are skipped or routed (see §2). |
+| **PCM bank** | Holds the song's sample data in RAM so drum and voice samples can be fed to the DAC at full speed. Some VGMs carry several hundred KB of samples, so the board should have PSRAM. |
+| **Scheduler** | Runs on core 1. Releases each write at its exact sample time and handles play, pause, stop, loop, A-B repeat. |
+| **Modifier layer** | Applies live tweaks to each write before it reaches the chip (§5). |
+| **Shadow registers** | Two copies of all ~320 registers: what the file last wrote, and what was actually sent. Drives seeking, reset, and the lights. |
+| **YM2612 driver** | Pin-level bus writes via PIO: set A1/A0, put data on D0–D7, pulse /WR, then wait for the busy bit to clear. Also reset (/IC) and silence. |
+| **UI** | Runs on core 0: screen, controls, LED grid, bus LEDs. Never blocks a chip write. |
 
-The chip driver interface is the seam that makes the series possible:
+### 3.3 Seeking
 
-```c
-typedef struct {
-    const char *name;               // "SN76489"
-    uint8_t     num_registers;
-    uint8_t     num_channels;
-    void (*init)(void);             // reset + clock check
-    void (*write)(uint16_t reg, uint8_t value);
-    void (*silence)(void);          // all channels off
-    const reg_info_t *register_map; // names, bit fields, ranges for the UI
-} chip_driver_t;
-```
+The chip can't be read back, so to jump to 1:30:
 
-### 4.3 Playback and file formats
+1. Key off all channels and mute the DAC.
+2. Run the file from the start **without writing to the chip**, updating only the shadow registers, up to 1:30.
+3. Write the whole shadow table to the chip in one burst, then re-send the key-on state.
+4. Resume playback.
 
-- **VGM/VGZ (Phase 1):** a ready-made timed list of register writes. The parser reads it; the scheduler plays it.
-- **Tracker/player formats (YM, PT3, SAP, KSS, DRO):** handled by small per-format player routines that generate the same event stream.
-- **SID files:** most PSID files contain 6502 code that a C64 would run. The SID box will run a small 6502 CPU emulation on the MCU to produce register writes, while the *sound* still comes from the real SID. This keeps the "no emulation" promise for audio. **Open:** confirm this is acceptable to the target audience.
+This takes milliseconds for a typical file. Fast-forward, rewind, loop, and A-B repeat all reuse it.
 
-### 4.4 Live tinkering
+### 3.4 Timing budget
 
-Every write from the file passes through the modifier layer:
+- Scheduler resolution: 1/44,100 s (about 22.7 µs), same as VGM.
+- Sample-heavy tracks write the DAC thousands of times per second, so DAC writes get priority and the bus is driven by PIO, not by the CPU.
+- Minimum gap between writes: measured on a logic analyzer against the busy bit during M1, then fixed in the driver.
 
-```
-file value ─▶ [ mute/solo ] ─▶ [ override? use user value ]
-                              ─▶ [ offset? add user delta, clamp ] ─▶ chip
-```
+## 4. The lights
 
-1. **Override:** hold a register at the user's value and ignore the file.
-2. **Offset:** add or subtract from the file's value, so the song still moves but bends.
-3. **Mute/solo:** silence or isolate a channel by forcing its volume register to off.
-4. **Snapshot:** save the current set of overrides/offsets/mutes to the SD card (up to 8 per song) and recall them later.
-5. **Reset:** clear all tweaks and immediately re-send the file's shadow values, so the chip snaps back to the original song.
+**Proposal:** three groups of lights, all driven by the microcontroller from the
+shadow registers, never wired to the chip's own pins (that keeps the chip safe and
+makes the lights readable instead of a blur).
 
-When a tweak is removed, the driver re-sends the file's shadow value for that
-register so there is no leftover state.
+### 4.1 Register grid (the centerpiece)
 
-### 4.5 Seeking
-
-Most of these chips are write-only, so we can't read their state back. To jump to 1:30:
-
-1. Silence the chip.
-2. Replay the file from the start **without writing to the chip**, only updating the shadow registers, until 1:30.
-3. Write the whole shadow table to the chip in one burst.
-4. Resume normal playback.
-
-For a few-KB VGM this takes milliseconds. Fast-forward/rewind reuse the same
-mechanism in steps. Loop and A-B repeat are seeks triggered by the scheduler.
-
-### 4.6 Timing budget
-
-- Scheduler resolution: 1/44,100 s (about 22.7 µs), matching VGM.
-- FM chips are the tightest case: the YM2612 and OPL2 need a short wait after each write before accepting the next. PIO handles the bus strobe, and the driver enforces a minimum gap per chip, measured on a logic analyzer against the datasheet.
-- UI drawing and SD reads run on the other core and are buffered so they can never stall a write.
-
-## 5. Hardware
-
-### 5.1 Block diagram
+A **32 × 8 addressable LED panel** (a common, cheap WS2812 matrix) laid out as a
+map of the chip, so each light *means* something:
 
 ```
-USB-C ─┬─ 5V ─ ferrite ─ LDO 3.3V ── MCU, SD, display (digital)
-       │        └─────── LDO 5V A ── chip analog + output stage
-       │        └── boost 9V/12V ── SID only
-       └─ USB data ── MCU (mass storage)
-
-MCU ── PIO bus ── 74LVC/74HCT level shifters ── chip module ── output stage ── 3.5 mm
+            CH1         CH2         CH3         CH4         CH5         CH6       GLOBAL
+         op1 2 3 4   op1 2 3 4   op1 2 3 4   op1 2 3 4   op1 2 3 4   op1 2 3 4   ........
+DT/MUL    ■ ■ ■ ■     ■ ■ ■ ■     ...                                            LFO
+TL        ■ ■ ■ ■                                                                 DAC on
+KS/AR     ■ ■ ■ ■                                                                 DAC level
+AM/DR     ■ ■ ■ ■                                                                 CH3 mode
+SR        ■ ■ ■ ■                                                                 key-on 1-6
+SL/RR     ■ ■ ■ ■                                                                 ...
+SSG-EG    ■ ■ ■ ■
+CHANNEL   freq · block · FB/ALG · pan/LFO sens (one cell each)
 ```
 
-### 5.2 Main board (shared by every box)
+- **Brightness** = the register's current value.
+- **Flash** = the register was just written; it fades over about 100 ms.
+- **Color** = who set it: warm white for the song, amber for a value you've overridden, blue for an offset.
+- The **selected register** (§5) blinks, so you can see what the encoder is pointing at.
 
-- **MCU:** Raspberry Pi RP2350. **Decision:** chosen for dual cores (playback vs. UI), PIO for exact bus timing, native USB mass storage, low cost, and a large hobbyist community, which helps the "hackable and open" goal.
-- **Storage:** microSD slot; USB-C drag-and-drop exposes it as a drive.
-- **Power:** USB-C with two 5.1 kΩ resistors on CC for 5V. SID boxes add either a boost converter or a USB-PD trigger chip for 9–12V.
-- **Clean audio:** separate analog and digital supply paths, LDO regulators, ferrite beads, and a star ground. **Open:** add an isolated output (audio transformer) to stop ground-loop hum when plugged into a computer and an amp at once.
-- **Output:** 3.5 mm line out and a headphone amp with volume knob.
-- **Expansion header:** labeled pins for UART (PEEK/POKE serial monitor), I²C (add-on knobs), and SWD (flashing/debugging).
+### 4.2 Bus blinkenlights
 
-### 5.3 Chip module (one per chip type)
+11 LEDs in a row: D7–D0, A1, A0, /WR. They mirror the last write, held for a few
+milliseconds so they flicker like a 70s front panel instead of staying dimly lit.
 
-- Socketed chip (ZIF or turned-pin) so the chip can be inspected and replaced.
-- Crystal oscillator at the chip's native clock (for example 3.579545 MHz for the SN76489 and OPL2, about 7.67 MHz for the YM2612).
-- Level-shifting buffers between the 3.3V MCU and the 5V chip.
-- Chip-specific analog stage: output filter, any external DAC (YM3014 for OPL2), and the right load for the chip's output.
-- Edge-lit window mount and the LED taps for the blinkenlights.
+### 4.3 Key-on lights
 
-### 5.4 Protecting the chip
+7 LEDs: one per channel that lights on each note, plus one for the DAC.
 
-These chips may be irreplaceable, so:
+**Power note:** 256 RGB LEDs at full white could draw several amps. Firmware caps
+total LED brightness to stay inside a 5V 3A USB-C budget, and the LEDs get their own
+supply path and ground return so they don't hum into the audio.
 
-- Series resistors and buffers on every user-reachable pin.
-- Clock and supply pins are never exposed on the header.
-- Reverse-polarity and overvoltage protection on the input.
-- Blinkenlights and any "pin ring" pads are driven from buffered copies, never the chip pins.
+## 5. The controls
 
-## 6. Milestones
+**Proposal:** a mix of "grab anything" and "big fun knobs".
 
-Each milestone ends with something you can hear or hold.
+### 5.1 Grab any register
+
+- **Encoder + screen:** turn to move the cursor around the register grid, click to grab that register.
+- Once grabbed, turn to set its value. A **mode button** cycles **Override** (hold my value, ignore the song) → **Offset** (add my amount to whatever the song writes) → **Release**.
+- The screen shows the register's name, the song's value, your value, and what it does in one line ("Op 2 multiplier: harmonic ×3").
+
+### 5.2 Macro knobs
+
+8 knobs for the changes that sound best. They act on the **selected channel** or on **all channels** (a toggle button):
+
+| Knob | What it changes | Sound |
+| --- | --- | --- |
+| Algorithm | ALG (0–7) | How the 4 operators are wired; totally changes the instrument |
+| Feedback | FB | Op 1 self-modulation; clean to buzzy to noisy |
+| Brightness | TL of *modulator* operators only | Dull to bright/harsh. The firmware knows the algorithm, so it never touches the carriers (which would just change volume) |
+| Harmonics | MUL offset | Shifts overtones; bells, metallic tones |
+| Attack | AR offset | Plucky vs. swelling |
+| Release | RR offset | Short vs. ringing tails |
+| LFO | LFO rate + AMS/PMS | Vibrato and tremolo, even on songs that never used it |
+| Transpose | Frequency/block offset | Pitch up/down in semitones; detune in fine steps |
+
+### 5.3 Buttons
+
+- **Transport:** previous, rewind, play/pause, stop, fast-forward, next.
+- **Channel mute 1–6 + DAC:** tap to mute, hold to solo. Each button sits under its channel's column on the grid.
+- **Snapshot:** save the current tweaks for this song to the SD card; long press to recall.
+- **Reset:** drop every tweak and re-send the song's own values. The sound snaps back instantly.
+- **Loop / A-B:** set loop points for tweaking one section over and over.
+
+### 5.4 Everything that's possible
+
+Every YM2612 register can be grabbed through §5.1. The ones worth exploring:
+
+- **Per operator:** total level (TL), multiplier (MUL), detune (DT), attack/decay/sustain/release rates, sustain level, key scaling, AM enable, SSG-EG envelope modes.
+- **Per channel:** algorithm, feedback, stereo pan (left/right/both), LFO pitch and amplitude sensitivity, frequency and octave.
+- **Global:** LFO on/off and rate, channel 3 special mode (each operator gets its own pitch), DAC on/off.
+
+Hand-written registers can produce silence or very loud harsh tones. **Reset** always
+recovers, and the output stage has a limiter so a bad setting can't blast headphones.
+
+## 6. Hardware for the proof of concept
+
+```
+USB-C 5V ─┬─ ferrite ─ 3.3V ── RP2350 board, screen, SD
+          ├─ ferrite ─ LDO 5V (analog) ── YM2612 + output stage
+          └─ separate path ── LED grid + bus LEDs (brightness-capped)
+
+RP2350 ── PIO bus ── level shifters ── YM2612 (socketed) ── op-amp buffer/filter ── 3.5 mm
+```
+
+| Part | Proposal |
+| --- | --- |
+| Microcontroller | RP2350 board with PSRAM (for example Pimoroni Pico Plus 2). Two cores, PIO for exact bus timing, room for big sample banks. |
+| Chip socket | 24-pin ZIF or turned-pin socket, centered under the window |
+| Clock | 7.67 MHz crystal oscillator can |
+| Level shifting | 74HCT-series buffers for 3.3V → 5V writes; a 5V-tolerant buffer or divider for reading the busy bit. Confirm thresholds against the datasheet. |
+| Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp with volume knob |
+| Screen | 2.0"–2.8" color IPS (SPI) |
+| Lights | 32×8 WS2812 panel, 11 + 7 discrete LEDs |
+| Controls | 1 clickable encoder, 8 knobs (potentiometers), about 20 buttons |
+| Power | USB-C with 5.1 kΩ resistors on CC for 5V; needs a 3A-capable supply because of the LEDs |
+| Storage | microSD slot, reachable from outside the case |
+| Build | Protoboard or a carrier board for the RP2350 and chip; the PCB comes later |
+
+**Protecting the chip:** series resistors on every bus line, no user-reachable pins,
+reverse-polarity protection on the input. Keep a spare YM2612 on hand.
+
+**Sourcing:** YM2612s are pulled from old consoles and are widely counterfeited. Buy
+from a seller with returns, and test each one on the breadboard rig (M1) before it goes
+in the box. A YM3438 (the later CMOS version) sounds cleaner and lacks the gritty DAC;
+note which one you have.
+
+## 7. Enclosure (Joey designs and prints)
+
+What the case needs to hold and expose:
+
+- **Chip window:** the YM2612 visible under a clear window with warm edge lighting raking across the top so the markings glow.
+- **Register grid:** 32×8 panel behind a diffuser, ideally with a printed light-blocking grid so each cell reads as its own square. Column and row labels printed or engraved on the panel (§4.1).
+- **Bus and key-on LED rows** near the grid.
+- **Screen**, **encoder**, **8 knobs**, **~20 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
+- **Rear or side:** USB-C, 3.5 mm line out, headphone jack + volume, microSD slot.
+- **Inside:** standoffs for the RP2350 board and the chip/audio board; keep the audio board away from the LED panel's power wiring.
+- **Style ideas from the notes:** beige or black finish, period font, the YM2612 pinout printed beside the window.
+
+Exact dimensions get filled in once the screen, LED panel, knobs, and buttons are bought (M5).
+
+## 8. Milestones
+
+Each one ends with something you can hear or see.
 
 | # | Milestone | Done when |
 | --- | --- | --- |
-| M0 | **Source the pilot chip** | Verified genuine SN76489 in hand, plus a known-good spare. |
-| M1 | **First sound** | Breadboard: RP2350 + SN76489 + crystal plays a hard-coded tone. |
-| M2 | **Play a VGM** | A VGM file from SD plays start to finish through the scheduler and driver. |
-| M3 | **Transport** | Play, pause, stop, next/prev, library browsing on a dev screen with encoder. |
-| M4 | **Shadow registers and seek** | Seek, FF/REW, loop, and A-B repeat work without glitches. |
-| M5 | **Live tinkering** | Override, offset, mute/solo, snapshot, reset. |
-| M6 | **Clean audio and power** | USB-C power, analog stage, noise floor measured and acceptable. |
-| M7 | **Enclosure mock-up** | Lit window, panel layout, and finish prototyped (3D print or laser-cut). |
-| M8 | **PCB v1** | Main board + SN76489 module, first complete unit. |
-| M9 | **Second chip** | AY-3-8910 module and driver prove the series design. |
+| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), RP2350 board, oscillator, level shifters, op-amp parts |
+| M1 | **First sound** | Breadboard plays a hard-coded FM note; write timing measured on a logic analyzer |
+| M2 | **Play a VGM** | A Genesis VGM plays start to finish from microSD, samples included |
+| M3 | **Transport + screen** | Track list, play/pause/stop/next/prev, title and time on screen |
+| M4 | **Shadow registers + seek** | Seek, FF/REW, loop, A-B repeat without glitches |
+| M5 | **Lights** | Register grid, bus LEDs, and key-on LEDs working; parts measured for the enclosure |
+| M6 | **Controls** | Grab-any-register, macro knobs, mute/solo, snapshot, reset |
+| M7 | **Clean power + audio** | USB-C only, LED brightness cap, no audible hum or LED noise |
+| M8 | **In the box** | Everything mounted in Joey's 3D-printed enclosure |
 
-## 7. Risks
+## 9. Later versions (out of scope now)
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Counterfeit or dead chips | High | Buy from known sellers, test every chip on a bench rig before building, keep spares. |
-| Chip cost and scarcity | High | Start with cheap chips; plan small numbered runs for rare ones. |
-| Prior art (SID and AY players exist) | Medium | Lean on the differentiators: lit window, blinkenlights, live register panel. |
-| Write timing on FM chips | Medium | PIO-driven bus, measured on a logic analyzer per chip. |
-| Audio noise over USB power | Medium | Separate rails, LDOs, ferrites; optional isolated output. |
-| User damages chip via header | High | Buffers, series resistors, no clock/supply pins exposed. |
+- Other chips (SN76489, AY-3-8910, OPL2, POKEY, SID, SCC) and a swappable chip-module design.
+- Custom PCB.
+- USB drag-and-drop file loading.
+- Serial PEEK/POKE monitor, expansion header, USB keyboard input.
+- Isolated audio output for ground-loop-free use with a computer and an amp.
 
-## 8. Open questions
+## 10. Open questions
 
-- [ ] Pilot chip: SN76489 (recommended) or AY-3-8910?
-- [ ] Is a 6502 player for SID files acceptable, given "no emulation" refers to the audio?
-- [ ] Personal builds, a small batch, or a product line? This drives PCB vs. hand-wired and the enclosure method.
-- [ ] Ship with a tested chip, or without one?
-- [ ] Include an isolated audio output on every box, or only as an option?
+- [ ] Genesis PSG parts: ignore (A), add a real SN76489 (B), or build A with room for B (C)?
+- [ ] Register grid as proposed (32×8 LED panel), or something different?
+- [ ] Controls: 8 macro knobs plus encoder as proposed, or encoder only to keep the panel simple?
+- [ ] Headphone amp, or line out only?
 
-## 9. Glossary
+## 11. Glossary
 
-- **Register:** a tiny memory slot inside the chip; writing a number to it changes pitch, volume, or tone.
-- **Register write:** sending one number to one register. Music on these chips is just a timed stream of these.
-- **VGM:** "Video Game Music," a file format that records every register write a game made, with timing.
-- **Shadow register:** the player's own copy of what each register holds, because the chip can't be read back.
-- **PIO:** programmable I/O blocks on the RP2350 that toggle pins with exact timing, independent of the CPU.
-- **Blinkenlights:** front-panel LEDs that show the computer's (here, the chip's) bus activity.
+- **Register:** a tiny memory slot in the chip; writing a number to it changes pitch, volume, or tone.
+- **Operator:** one of the 4 sine-wave generators inside each FM channel. *Carriers* are heard; *modulators* bend the carriers' tone.
+- **Algorithm:** how a channel's 4 operators are wired together (8 options).
+- **VGM / VGZ:** "Video Game Music", a recording of every register write a game made, with timing. VGZ is the zipped version.
+- **Shadow register:** the player's own copy of a register's value, because the chip can't be read back.
+- **PIO:** programmable I/O blocks on the RP2350 that toggle pins with exact timing.
+- **DAC:** the YM2612's sample-playback mode on channel 6, used for drums and voices.
+- **PSG:** the Genesis's second, simpler sound chip (SN76489-style).
