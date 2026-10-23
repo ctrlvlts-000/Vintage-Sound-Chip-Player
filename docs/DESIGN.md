@@ -18,7 +18,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
 2. **Lights show the chip's registers** as the music writes them.
-3. **Synth controls** (4 knobs like Brilliance and Pitch, each pointed at any channel) to mess with the sound live, with a Bypass button to hear the original song.
+3. **Synth controls** (4 knobs like Timbre and Pitch, each pointed at any channel) to mess with the sound live, with a Bypass button to hear the original song.
 4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
 5. Powered from one USB-C cable.
 6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
@@ -46,13 +46,10 @@ What the design has to work with:
 | Needs a short wait after each write (busy flag) | Driver polls the busy bit or enforces a measured minimum gap |
 | Analog outputs MOL / MOR with the chip's famous slightly gritty DAC | Needs a buffered output stage; the grit is part of the charm |
 
-**Open — the Genesis PSG.** Genesis music also uses a second chip, the SN76489-style
-PSG, for some square-wave parts, hi-hats, and effects. VGM files contain those writes
-too. Options:
-
-- **A (proposal for v1):** ignore PSG writes. Most songs still sound complete, some lose a part; the screen shows a small "PSG parts muted" note.
-- **B:** add a real SN76489 next to the YM2612. Songs are complete; adds a chip, a second output to mix, and a little firmware.
-- **C:** leave room for B on the board and in the enclosure, build A first.
+**Decision (Joey, Oct 23): YM2612 sounds only.** Genesis music also uses a second chip,
+the SN76489-style PSG, for some square-wave parts, hi-hats, and effects. VGM files contain
+those writes too, but the player skips them, so only the YM2612 is heard. Some songs will
+be missing a part; the screen shows a small "PSG parts skipped" note on those tracks.
 
 ## 3. How it works
 
@@ -113,7 +110,7 @@ value it sent, and lights up the panel to match. The YM2612 makes the actual sou
 | Module | Job |
 | --- | --- |
 | **Storage** | FAT32 microSD (FatFs). Scans folders and builds a track list. |
-| **VGM parser** | Reads the header (clock, length, loop point, title tags) and turns commands into `(wait, port, register, value)` events. Handles YM2612 writes, waits, PCM data blocks, DAC writes, and the DAC stream commands. PSG writes are skipped or routed (see §2). |
+| **VGM parser** | Reads the header (clock, length, loop point, title tags) and turns commands into `(wait, port, register, value)` events. Handles YM2612 writes, waits, PCM data blocks, DAC writes, and the DAC stream commands. PSG writes are skipped (see §2). |
 | **PCM bank** | Holds the song's sample data in RAM so drum and voice samples can be fed to the DAC at full speed. Some VGMs carry several hundred KB of samples, so the board should have PSRAM. |
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time and handles play, pause, stop, loop, A-B repeat. |
 | **Synth layer** | Applies each knob's offset to its assigned channel, plus mutes, to each write before it reaches the chip (§5). |
@@ -184,33 +181,43 @@ supply path and ground return so they don't hum into the audio.
 
 **Decision (Joey, Oct 23):** synth controls only, no direct register editing. The
 knobs change the chip's registers behind the scenes, but you work with musical ideas
-like "Brilliance" and "Pitch", never raw register numbers.
+like "Timbre" and "Pitch", never raw register numbers.
 
 ### 5.1 Four knobs you point at channels
 
-The control level is modeled on the **Yamaha TQ5's "Easy Edit"**: a few musical
-parameters, each moved about ±10 steps from the original sound, with no operators or
-algorithms in sight. There are just **4 knobs**, each with a fixed job and a small
+The controls borrow from two easy-to-use 4-operator FM synths of the late 80s:
+
+- **Korg DS-8 / 707:** Korg hid FM's operators and algorithms behind analog-style terms.
+  Each sound has a **timbre** (brightness) side and an **amplitude** (volume) side, each
+  with its own envelope. The performance sliders are **relative to the stored sound**, not
+  absolute, and an oscillator select button picks what the sliders act on.
+- **Yamaha TQ5 "Easy Edit":** a handful of musical parameters, each moved about ±10 steps
+  from the original sound.
+
+On the YM2612 this maps cleanly: the firmware knows each channel's algorithm, so it knows
+which operators are **modulators** (they shape timbre) and which are **carriers** (they
+make the sound you hear). There are just **4 knobs**, each with a fixed job and a small
 **Assign** button with a light:
 
-| Knob | TQ5 Easy Edit equivalent | Under the hood | Sound |
+| Knob | Inspired by | Under the hood | Sound |
 | --- | --- | --- | --- |
-| **Brilliance** | Brilliance | TL offset on *modulator* operators only (firmware knows the algorithm, so carriers are left alone) | Dull to bright/harsh |
-| **Tone** | Tone | FB (feedback) offset | Clean to buzzy to noisy |
-| **Envelope** | Attack + Release | Attack and release rates moved together; decay and sustain stay as the song wrote them | Left: snappy, short tails. Right: soft swell, long tails |
-| **Pitch** | (Transpose) | Frequency/block offset in semitones (±12) | Pitch down/up |
+| **Timbre** | DS-8 Timbre slider, TQ5 Brilliance | TL offset on *modulator* operators only | Dull to bright/harsh |
+| **Timbre EG** | DS-8 timbre envelope | Attack and release rates of the *modulators*, together | How fast the brightness opens up and fades away |
+| **Amp EG** | DS-8 envelope sliders, TQ5 Attack/Release | Attack and release rates of the *carriers*, together | Left: snappy, short tails. Right: soft swell, long tails |
+| **Pitch** | DS-8 joystick bend (up to 12 semitones) | Frequency/block offset in semitones (±12) | Pitch down/up |
 
 Each knob has **21 positions: −10 to +10**, with 0 at the center detent meaning "the song
-as written", matching the TQ5's ±10 Easy Edit range. Pitch uses ±12 semitones instead.
+as written", like the TQ5's ±10 Easy Edit and the DS-8's relative sliders. Pitch uses
+±12 semitones instead. Decay and sustain always stay as the song wrote them.
 
-What the TQ5 has that this box leaves out: **Wave** (the YM2612 only makes sine waves, so
-there's nothing to select), **vibrato and tremolo** (dropped by Joey), and the TQ5's
-built-in effects (the YM2612 has none).
+Left out on purpose: feedback ("buzz"), the TQ5's **Wave** choice (the YM2612 only makes
+sine waves), **vibrato and tremolo** (dropped by Joey), and built-in effects (the YM2612
+has none).
 
 **Pointing a knob at a channel:** tap the knob's **Assign** button, then tap a channel
 button (1–6). Tap Assign twice to point it at **all channels**. Each knob remembers its
 channel, so different knobs can work on different channels at once, for example
-Brilliance on the bass and Pitch on the lead. The register grid outlines each knob's
+Timbre on the bass and Pitch on the lead. The register grid outlines each knob's
 channel in that knob's color, so you can see what's pointed where.
 
 ### 5.2 How the knobs behave
@@ -301,6 +308,7 @@ Each one ends with something you can hear or see.
 ## 9. Later versions (out of scope now)
 
 - Other chips (SN76489, AY-3-8910, OPL2, POKEY, SID, SCC) and a swappable chip-module design.
+- A real SN76489 so Genesis PSG parts play too.
 - Custom PCB.
 - USB drag-and-drop file loading.
 - Expert mode for direct register editing (§5.4), serial PEEK/POKE monitor, expansion header, USB keyboard input.
@@ -308,7 +316,6 @@ Each one ends with something you can hear or see.
 
 ## 10. Open questions
 
-- [ ] Genesis PSG parts: ignore (A), add a real SN76489 (B), or build A with room for B (C)?
 - [ ] Register grid as proposed (32×8 LED panel), or something different?
 - [ ] Headphone amp, or line out only?
 
