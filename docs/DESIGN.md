@@ -18,7 +18,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
 2. **Lights show the chip's registers** as the music writes them.
-3. **Synth controls** (knobs like Brightness, Attack, Vibrato) to mess with the sound live, with a Bypass button to hear the original song.
+3. **Synth controls** (knobs like Brightness, Attack, Release) to mess with the sound live, with a Bypass button to hear the original song.
 4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
 5. Powered from one USB-C cable.
 6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
@@ -194,9 +194,9 @@ like "Brightness" and "Attack", never raw register numbers.
 - **Bypass** button: hear the untouched song while held (or toggled), to compare.
 - Settings that would produce silence or a painful sound are clamped by the firmware, and the output stage has a limiter.
 
-### 5.2 The 12 synth knobs
+### 5.2 The 10 synth knobs
 
-Laid out in two rows of six.
+Laid out in two rows of five. Songs that use the chip's own vibrato or tremolo (LFO) still play it as written; there are no knobs for it.
 
 | # | Knob | Under the hood | Sound |
 | --- | --- | --- | --- |
@@ -210,8 +210,6 @@ Laid out in two rows of six.
 | 8 | Decay | DR / SL offset | How fast the note falls after the hit |
 | 9 | Sustain | SR offset | How long the held part lasts |
 | 10 | Release | RR offset | Short vs. ringing tails |
-| 11 | Vibrato | LFO rate + PMS (pitch sensitivity) | Pitch wobble, even on songs that never used it |
-| 12 | Tremolo | LFO rate + AMS (amplitude sensitivity) | Volume wobble |
 
 Plus an analog **volume** knob on the output.
 
@@ -248,7 +246,7 @@ RP2350 ── PIO bus ── level shifters ── YM2612 (socketed) ── op-a
 | Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp with volume knob |
 | Screen | 2.0"–2.8" color IPS (SPI) |
 | Lights | 32×8 WS2812 panel, 11 + 7 discrete LEDs |
-| Controls | 12 center-detent potentiometers, 1 volume pot, 1 clickable encoder, about 18 buttons |
+| Controls | 10 center-detent potentiometers, 1 volume pot, 1 clickable encoder, about 18 buttons |
 | Power | USB-C with 5.1 kΩ resistors on CC for 5V; needs a 3A-capable supply because of the LEDs |
 | Storage | microSD slot, reachable from outside the case |
 | Build | Protoboard or a carrier board for the RP2350 and chip; the PCB comes later |
@@ -268,7 +266,7 @@ What the case needs to hold and expose:
 - **Chip window:** the YM2612 visible under a clear window with warm edge lighting raking across the top so the markings glow.
 - **Register grid:** 32×8 panel behind a diffuser, ideally with a printed light-blocking grid so each cell reads as its own square. Column and row labels printed or engraved on the panel (§4.1).
 - **Bus and key-on LED rows** near the grid.
-- **Screen**, **encoder**, **12 synth knobs in two rows of six**, **volume knob**, **~18 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
+- **Screen**, **encoder**, **10 synth knobs in two rows of five**, **volume knob**, **~18 buttons**, with the 7 mute buttons lined up under the grid's channel columns.
 - **Rear or side:** USB-C, 3.5 mm line out, headphone jack + volume, microSD slot.
 - **Inside:** standoffs for the RP2350 board and the chip/audio board; keep the audio board away from the LED panel's power wiring.
 - **Style ideas from the notes:** beige or black finish, period font, the YM2612 pinout printed beside the window.
@@ -287,7 +285,7 @@ Each one ends with something you can hear or see.
 | M3 | **Transport + screen** | Track list, play/pause/stop/next/prev, title and time on screen |
 | M4 | **Shadow registers + seek** | Seek, FF/REW, loop, A-B repeat without glitches |
 | M5 | **Lights** | Register grid, bus LEDs, and key-on LEDs working; parts measured for the enclosure |
-| M6 | **Synth controls** | 12 knobs, channel select, bypass, mute/solo |
+| M6 | **Synth controls** | 10 knobs, channel select, bypass, mute/solo |
 | M7 | **Clean power + audio** | USB-C only, LED brightness cap, no audible hum or LED noise |
 | M8 | **In the box** | Everything mounted in Joey's 3D-printed enclosure |
 
