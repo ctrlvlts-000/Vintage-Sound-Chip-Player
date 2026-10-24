@@ -9,7 +9,7 @@ Section numbers in this file are its own.
 ## 1. What's parked
 
 - **Register light grid**, bus blinkenlights, and key-on lights (§2)
-- **Synth controls:** Rev A has full parameter editing with an Edit button and data knob (see DESIGN.md §2.3). Later: 4 dedicated Korg DS-8 style knobs (Timbre, Timbre EG, Amp EG, Pitch), each assignable to any channel, plus Bypass and mute/solo (§3)
+- **Synth controls:** Rev A has full parameter editing through menus and a data knob (see DESIGN.md §2.4). Later: 4 dedicated Korg DS-8 style knobs (Timbre, Timbre EG, Amp EG, Pitch), each assignable to any channel, plus Bypass and mute/solo (§3)
 - **Fuller transport:** pause, next/previous, seek, loop, A-B repeat (§4)
 - **Fuller hardware:** Pico Plus 2 with PSRAM, LED power budget, USB-C (§5)
 - **Lit chip window and enclosure styling** (§6)
@@ -120,8 +120,8 @@ channel in that knob's color, so you can see what's pointed where.
 
 ### 3.4 Full parameter editing
 
-Now part of Rev A: an Edit button, Up/Down, and a data knob reach all 56 YM2612 sound
-parameters by number (see [DESIGN.md §2.3](DESIGN.md)).
+Now part of Rev A: late-80s style menus with one data knob reach every YM2612 sound
+parameter (see [DESIGN.md §2.4](DESIGN.md)).
 
 ## 4. Seeking and fuller transport
 
