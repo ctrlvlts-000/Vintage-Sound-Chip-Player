@@ -9,12 +9,12 @@ Section numbers in this file are its own.
 ## 1. What's parked
 
 - **Register light grid**, bus blinkenlights, and key-on lights (§2)
-- **Synth controls:** Rev A has these on one data knob (see DESIGN.md §2.3). Later: 4 dedicated Korg DS-8 style knobs (Timbre, Timbre EG, Amp EG, Pitch), each assignable to any channel, plus Bypass and mute/solo (§3)
+- **Synth controls:** Rev A has full parameter editing with an Edit button and data knob (see DESIGN.md §2.3). Later: 4 dedicated Korg DS-8 style knobs (Timbre, Timbre EG, Amp EG, Pitch), each assignable to any channel, plus Bypass and mute/solo (§3)
 - **Fuller transport:** pause, next/previous, seek, loop, A-B repeat (§4)
 - **Fuller hardware:** Pico Plus 2 with PSRAM, LED power budget, USB-C (§5)
 - **Lit chip window and enclosure styling** (§6)
 - **More MIDI:** a 3.5 mm TRS or 5-pin DIN MIDI in jack, MIDI CC control of the knobs, MIDI out
-- Later still: direct register editing (expert mode), a real SN76489 for Genesis PSG parts, USB drag-and-drop, other chips
+- Later still: a real SN76489 for Genesis PSG parts, USB drag-and-drop, other chips
 
 ## 2. The lights
 
@@ -118,11 +118,10 @@ channel in that knob's color, so you can see what's pointed where.
 - **Assign** (one per knob) and **Bypass** (§3.1–3.2).
 - **Loop / A-B:** loop one section while you play with the knobs.
 
-### 3.4 Later: expert mode
+### 3.4 Full parameter editing
 
-Direct register editing (the "POKE a value" idea from the original notes) is left out of the
-proof of concept. It can come back later as a hidden expert mode on the same hardware,
-since the firmware already keeps every register in its shadow table.
+Now part of Rev A: an Edit button, Up/Down, and a data knob reach all 56 YM2612 sound
+parameters by number (see [DESIGN.md §2.3](DESIGN.md)).
 
 ## 4. Seeking and fuller transport
 
