@@ -14,7 +14,8 @@ The YM2612 is the first of a planned series of classic chiptune chips.
 playback and nothing else. The lights, synth knobs, fuller transport, and lit window
 designed earlier are parked in [LATER-REVISIONS.md](LATER-REVISIONS.md) for Rev B and on.
 
-Joey is drawing the schematic and PCB in a KiCad project called **YM2612 player**. This
+The Rev A schematic is in [hardware/ym2612_player](../hardware/ym2612_player) (KiCad), aimed at a PCBWay
+turnkey prototype. Joey also has a local KiCad project called **YM2612 player**. This
 doc is the reference for what goes on that board. Items marked **Proposal** are
 recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
@@ -320,17 +321,17 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | --- | --- | --- |
 | Microcontroller | **Pimoroni Pico Plus 2** (RP2350, 16 MB flash, 8 MB PSRAM, USB-C), Pico-sized, soldered by its castellated edges or on headers | $12–15 |
 | Sound chip | YM2612, pulled from a Model 1 Genesis or bought tested | $5–15 |
-| Chip socket | 24-pin DIP, turned-pin | $0.50 |
+| Chip socket | 24-pin DIP, turned-pin (Mill-Max 110-43-624-41-001000). PCBWay fits the socket; Joey fits the chip | $2 |
 | Level shifting | 2× 74HCT541 (one-way 3.3V → 5V buffers, powered from 5V) | $1 |
 | Filter / buffer | OPA2350 low-noise, rail-to-rail dual op-amp rated for 2.7–5.5V (L and R), with Model 1 filter values | $2 |
-| Headphone driver | NJM4556A dual op-amp, AC-coupled output | $1 |
+| Headphone driver | NJM4556AD dual op-amp (DIP-8), AC-coupled output | $1 |
 | Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
-| Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
+| Analog supply | LP5907MFX-4.5 low-noise 4.5V LDO plus ferrite and 10 µH / 22 µF filter | $1 |
 | Audio jacks | 3.5 mm stereo headphone jack (front) + 2× 1/4" TRS panel jacks (rear) | $3–4 |
 | Headphone volume | Dual-gang slide potentiometer with a red cap, before the headphone driver only | $1–2 |
 | Display | HiLetgo HD44780 2004A 20×4 LCD, blue backlight, with I²C backpack (PCF8574 type), 5V | $10–13 |
 | I²C level shifter | 2-channel bidirectional (BSS138 MOSFETs or a PCA9306), 3.3V ↔ 5V | $0.50 |
-| Buttons | 7× 6 mm tactile switches (or 12 mm with caps for a synth feel) | $0.70–3 |
+| Buttons | 7× 12 mm tactile switches (Omron B3F-4055) with snap-on round caps, red for Play (Joey, Oct 24) | $4 |
 | Data knob | Rotary encoder, no push switch needed (EC11 type), with a knob cap | $1 |
 | Power and file loading | The Pico board's own USB-C port (no extra connector) | $0 |
 | Chip window light | 2× warm-white 3 mm LEDs with resistors, on 5V, always on | $0.20 |
@@ -385,6 +386,10 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
   same low-pass filter that softens the top end. There's no "clean" mode and no switch.
 - The filter is built around an **OPA2350** buffer, with the resistor and capacitor values taken
   from a real Model 1 schematic and checked by measuring an original console's output in M4.
+  The Rev A schematic starts from published Model 1 style values: a 2.2k load on MOL / MOR (as in
+  the Mega Amp), then a first-order low-pass at 3.39 kHz (47k in, 100k ‖ 470 pF feedback, the same
+  corner as the 47k / 1 nF Model 1 filter). One capacitor swap (560 pF) moves it to 2.84 kHz if the
+  M4 comparison says so.
 - No USB audio: like the original hardware, the sound only leaves through the analog jacks.
 - From there, each channel splits two ways:
   - **Headphones:** an NJM4556A drives the 3.5 mm jack through about 220 µF output capacitors.
@@ -468,8 +473,8 @@ is parked for later revisions.
 
 - [x] **Headphone volume:** a front slide pot on the headphone output only, part of the console homage (Oct 24). The balanced outs stay at a fixed line level.
 - [x] **Display:** HiLetgo 20×4 blue character LCD on I²C, from the Chip Box spec (Joey, Oct 24). USB-C loading and USB MIDI stay.
-- [ ] **Buttons:** small 6 mm tactile switches, or larger synth-style buttons with caps?
-- [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
+- [x] **Buttons:** 12 mm tactile switches with snap-on caps, for a synth feel (Joey, Oct 24).
+- [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch? The Rev A schematic does the Pico clock and has an unfitted oscillator footprint, so either works on the same board.
 - [x] **File loading:** over USB-C into the board's flash, no microSD (Joey, Oct 24).
 - [ ] **VGZ:** proposed as required in Rev A, since zipped files stretch the 16 MB of storage.
 
