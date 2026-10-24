@@ -26,7 +26,8 @@ for n in range(1, 41):
     pad.SetRoundRectRadiusRatio(0.25)
     pad.SetSize(pcbnew.VECTOR2I(mm(3.2), mm(1.6)))
     pad.SetLayerSet(pad.SMDMask())
-    pad.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
+    pad.SetPos0(pcbnew.VECTOR2I(int(round(x * 1e6)), int(round(y * 1e6))))
+    pad.SetPosition(pcbnew.VECTOR2I(int(round(x * 1e6)), int(round(y * 1e6))))
     fp.Add(pad)
 
 
@@ -34,6 +35,8 @@ def rect(layer, x1, y1, x2, y2, w):
     for a, b in [((x1, y1), (x2, y1)), ((x2, y1), (x2, y2)), ((x2, y2), (x1, y2)), ((x1, y2), (x1, y1))]:
         s = pcbnew.FP_SHAPE(fp)
         s.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        s.SetStart0(pcbnew.VECTOR2I(mm(a[0]), mm(a[1])))
+        s.SetEnd0(pcbnew.VECTOR2I(mm(b[0]), mm(b[1])))
         s.SetStart(pcbnew.VECTOR2I(mm(a[0]), mm(a[1])))
         s.SetEnd(pcbnew.VECTOR2I(mm(b[0]), mm(b[1])))
         s.SetLayer(layer)
@@ -49,10 +52,12 @@ rect(pcbnew.F_Fab, -4.5, -26.8, 4.5, -21.0, 0.1)
 t = pcbnew.FP_TEXT(fp)
 t.SetText("USB-C")
 t.SetLayer(pcbnew.F_SilkS)
+t.SetPos0(pcbnew.VECTOR2I(0, mm(-22.5)))
 t.SetPosition(pcbnew.VECTOR2I(0, mm(-22.5)))
 fp.Add(t)
-fp.Reference().SetPosition(pcbnew.VECTOR2I(0, mm(-28)))
-fp.Value().SetPosition(pcbnew.VECTOR2I(0, mm(28)))
+for f, y in [(fp.Reference(), -28), (fp.Value(), 28)]:
+    f.SetPos0(pcbnew.VECTOR2I(0, mm(y)))
+    f.SetPosition(pcbnew.VECTOR2I(0, mm(y)))
 lib = os.path.abspath(out)
 pcbnew.FootprintSave(lib, fp)
 print("saved", lib)

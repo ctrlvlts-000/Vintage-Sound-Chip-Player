@@ -10,7 +10,7 @@ import re
 import uuid as uuidlib
 
 KICAD_SYMBOLS = os.environ.get("KICAD_SYMBOL_DIR", "/usr/share/kicad/symbols")
-PROJECT = "ym2612_player"
+PROJECT = os.environ.get("YM_PROJECT", "ym2612_player")
 TITLE = "YM2612 player"
 DATE = "2026-10-24"
 REV = "A0.1"

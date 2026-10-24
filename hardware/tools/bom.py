@@ -11,7 +11,7 @@ MAKERS = {
     "PIM724": "Pimoroni", "74HCT541D,653": "Nexperia", "110-43-624-41-001000": "Mill-Max",
     "OPA2350UA": "Texas Instruments", "NJM4556AD": "Nisshinbo (NJR)", "NMJ6HCD2": "Neutrik",
     "SJ1-3523N": "CUI Devices / Same Sky", "PTA2044-2015DPA103": "Bourns", "B3F-4055": "Omron",
-    "PEC11R-4215F-N0024": "Bourns", "BSS138": "onsemi", "B4B-XH-A(LF)(SN)": "JST",
+    "PEC11R-4215F-N0024": "Bourns", "BSS138": "onsemi", "B4B-XH-A(LF)(SN)": "JST", "B6B-XH-A(LF)(SN)": "JST",
 }
 THT = ("DIP", "Jack", "LED_D3", "SW_PUSH", "RotaryEncoder", "JST", "PinHeader", "Oscillator_DIP")
 
