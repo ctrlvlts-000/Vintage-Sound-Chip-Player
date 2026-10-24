@@ -1,6 +1,6 @@
 # Chip Shrine: YM2612 Player — Rev A Design
 
-Status: Draft v0.7 · Oct 24, 2026 · Owner: Joey
+Status: Draft v0.8 · Oct 24, 2026 · Owner: Joey
 
 > A small box with a real Sega Genesis sound chip, the Yamaha YM2612. Put VGM files
 > onto it over USB-C like a thumb drive, pick a song with the buttons, and hear the
@@ -25,11 +25,12 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 3. **Audio outputs:** a 3.5 mm headphone jack, plus **two balanced 1/4" TRS line outs** (L and R) for an audio interface. Target: **noise floor at or below −70 dB** (§5.5).
 4. **A display** that shows the file being played.
 5. **Four buttons:** Up, Down, Start, Stop.
-6. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from a keyboard or computer (§2.2). Costs no extra parts.
+6. **One data knob:** a push-and-turn encoder for Korg DS-8 style sound tweaks (Timbre, Timbre EG, Amp EG, Pitch) on any channel (§2.3).
+7. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from a keyboard or computer (§2.2). Costs no extra parts.
 
 **Not in Rev A**
 
-- Lights, synth knobs, register editing, lit chip window (see [LATER-REVISIONS.md](LATER-REVISIONS.md)).
+- Lights, the 4-knob panel, register editing, lit chip window (see [LATER-REVISIONS.md](LATER-REVISIONS.md)).
 - Pause, next/previous, seek, loop, A-B repeat.
 - Volume control (see Open questions, §8).
 - Genesis PSG parts: only the YM2612 plays (decided Oct 23).
@@ -102,6 +103,37 @@ When stopped, the screen shows a scrolling list of tracks with the selected one 
 └────────────────────────┘
 ```
 
+### 2.3 The data knob
+
+One push-and-turn encoder, like the data slider on a Korg DS-8, gives the Korg-style
+sound controls without a panel full of knobs. It works the same way in both modes: in VGM
+mode it bends the song as it plays, and in MIDI mode it shapes the instrument you're playing.
+
+- **Push** to step through the parameters: **Channel → Timbre → Timbre EG → Amp EG → Pitch** → back to Channel.
+- **Turn** to change the one shown on the screen.
+- **Hold for 2 seconds** to reset everything to the song (or instrument) as written.
+- When stopped in VGM mode, turning the knob also scrolls the track list quickly.
+
+| Parameter | Range | Under the hood | Sound |
+| --- | --- | --- | --- |
+| **Channel** | All, 1–6 | Which FM channel the next four act on. Each channel remembers its own settings | — |
+| **Timbre** | −10 … +10 | Level (TL) of the *modulator* operators only | Dull to bright |
+| **Timbre EG** | −10 … +10 | Attack and release rates of the modulators, together | How fast the brightness opens and fades |
+| **Amp EG** | −10 … +10 | Attack and release rates of the carriers, together | Snappy to soft and swelling |
+| **Pitch** | −12 … +12 semitones | Frequency/block offset | Pitch down/up |
+
+0 always means "as written". The firmware knows each channel's algorithm, so it knows which
+operators are modulators and which are carriers.
+
+```
+┌────────────────────────┐
+│ ▶ 03/27        01:24   │
+│ Green Hill Zone        │
+│ CH 2   TIMBRE     +4   │   selected channel, parameter, value
+│ ████████████░░░░░░░░   │   value bar, centre = as written
+└────────────────────────┘
+```
+
 ## 3. The chip: YM2612 at a glance
 
 | Fact | What Rev A does about it |
@@ -130,7 +162,8 @@ flowchart LR
         SCHED[Write scheduler<br/>44.1 kHz timeline]
         DRV[YM2612 driver<br/>PIO bus writes]
         CLKGEN[Clock output<br/>7.67 MHz]
-        UI[Display + buttons]
+        UI[Display, buttons,<br/>data knob]
+        SYN[Sound tweaks<br/>Timbre, EGs, Pitch]
     end
 
     BUF[74HCT buffers<br/>3.3V to 5V]
@@ -148,7 +181,8 @@ flowchart LR
     PARSE -- "sample data" --> PCM
     PARSE -- "timed writes" --> SCHED
     PCM -- "DAC bytes" --> SCHED
-    SCHED --> DRV --> BUF --> YM
+    SCHED --> SYN --> DRV --> BUF --> YM
+    UI -- "tweaks" --> SYN
     CLKGEN --> BUF
     YM -- "analog L/R" --> FILT
     FILT --> AMP --> JACK
@@ -156,7 +190,7 @@ flowchart LR
     BTN --> UI
     UI --> OLED
     UI -- "start, stop" --> SCHED
-    MIDI -- "notes (MIDI mode)" --> DRV
+    MIDI -- "notes (MIDI mode)" --> SYN
 ```
 
 In plain words: the Pico reads a VGM file from its own flash memory, where you copied it over USB. The file is a list of "write
@@ -176,7 +210,8 @@ the headphone jack and the balanced outputs.
 | **Sample data** | Loads the song's PCM samples into the board's 8 MB PSRAM, so even sample-heavy tracks fit. |
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time (1/44,100 s). Stops at the end, or after the loop has played twice. |
 | **YM2612 driver** | PIO program: put A1/A0 and D0–D7 on the pins, pulse /WR, wait the minimum gap. Also pulses /IC (reset) at power-up and on Stop to silence the chip. |
-| **UI** | Runs on core 0. Debounces the 4 buttons, switches between VGM and MIDI mode, and draws the OLED. Never delays a chip write. |
+| **Sound tweaks** | Applies the data knob's per-channel offsets (Timbre, Timbre EG, Amp EG, Pitch) to every write, in both modes, clamping values so nothing goes silent or painful. |
+| **UI** | Runs on core 0. Debounces the 4 buttons, reads the data knob, switches between VGM and MIDI mode, and draws the OLED. Never delays a chip write. |
 
 ## 5. Hardware
 
@@ -208,6 +243,7 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Audio jacks | 3.5 mm stereo headphone jack + 2× 1/4" TRS panel jacks | $3–4 |
 | Display | 0.96" 128×64 SSD1306 OLED module, I²C, 4 pins | $2–3 |
 | Buttons | 4× 6 mm tactile switches | $0.40 |
+| Data knob | Rotary encoder with push switch (EC11 type) and a knob cap | $1 |
 | Power and file loading | The Pico board's own USB-C port (no extra connector) | $0 |
 | Passives | Decoupling, ferrites, op-amp resistors and caps, output caps | $2 |
 | PCB | 2-layer, about 100 × 70 mm | about $1 each in a batch of 5 |
@@ -243,6 +279,9 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
 | GP15 | OLED SCL (I²C1) | OLED |
 | GP20 | Button Start | to GND, internal pull-up |
 | GP22 | Button Stop | to GND, internal pull-up |
+| GP16 | Data knob A | encoder, internal pull-up |
+| GP17 | Data knob B | encoder, internal pull-up |
+| GP18 | Data knob push | to GND, internal pull-up |
 | — | /CS tied low, /RD tied high | YM2612 |
 
 ### 5.5 Audio output and the −70 dB target
@@ -304,6 +343,7 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 | M1 | **First sound** | Breadboard: the Pico clocks the YM2612 and plays a hard-coded FM note; write gap measured |
 | M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included |
 | M3 | **Display + buttons** | Track list, Up/Down/Start/Stop, title and time on the OLED |
+| M3a | **Data knob** | Timbre, Timbre EG, Amp EG, and Pitch audibly bend a playing song, per channel, and reset cleanly |
 | M3b | **MIDI mode** | A USB keyboard or DAW plays 6-note chords on the YM2612 using built-in and borrowed instruments |
 | M4 | **Quiet audio** | Idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
 | M5 | **Schematic + PCB** | Joey's KiCad project matches this doc; boards ordered |

@@ -9,7 +9,7 @@ Section numbers in this file are its own.
 ## 1. What's parked
 
 - **Register light grid**, bus blinkenlights, and key-on lights (§2)
-- **Synth controls:** 4 Korg DS-8 style knobs (Timbre, Timbre EG, Amp EG, Pitch), each assignable to any channel, plus Bypass and mute/solo (§3)
+- **Synth controls:** Rev A has these on one data knob (see DESIGN.md §2.3). Later: 4 dedicated Korg DS-8 style knobs (Timbre, Timbre EG, Amp EG, Pitch), each assignable to any channel, plus Bypass and mute/solo (§3)
 - **Fuller transport:** pause, next/previous, seek, loop, A-B repeat (§4)
 - **Fuller hardware:** Pico Plus 2 with PSRAM, LED power budget, USB-C (§5)
 - **Lit chip window and enclosure styling** (§6)
