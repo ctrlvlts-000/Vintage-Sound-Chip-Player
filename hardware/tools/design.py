@@ -99,7 +99,7 @@ pico = {
 for g in ["3", "8", "13", "18", "23", "28", "38"]:
     pico[g] = "GND"
 mc.add("ym2612:PicoPlus2", "U", "Pimoroni Pico Plus 2", 165.1, 139.7, pico,
-       fields=f("ym2612:Pimoroni_PicoPlus2_SMD", "PIM724", "Pimoroni Pico Plus 2, Digi-Key PIM724, soldered flat by its castellated edges"))
+       fields=f("ym2612:Pimoroni_PicoPlus2_Socketed", "PIM724", "Pimoroni Pico Plus 2, Digi-Key PIM724, with 2x 20-pin male headers soldered on, plugged into sockets U2-SKT"))
 cap(mc, "10uF", 241.3, 88.9, "+3V3", fp=FP_C0805, spec="X5R, 10V, 0805")
 cap(mc, "100nF", 254, 88.9, "+3V3")
 # Keep the YM2612 quiet while the Pico boots: /IC held low (reset), /WR high, address lines low.
@@ -117,7 +117,7 @@ for i, net in enumerate(tps):
     mc.add("Connector:TestPoint", "TP", net.replace("MCU_", ""), 297.18 + (i % 5) * 20.32, 76.2 + (i // 5) * 33.02,
            {"1": net}, fields=f("TestPoint:TestPoint_Pad_D1.5mm"))
 mc.text(25.4, 25.4,
-        "CONTROLLER: Pimoroni Pico Plus 2 (RP2350, 16 MB flash, 8 MB PSRAM, USB-C). PCBWay solders it flat by its castellated edges.\n"
+        "CONTROLLER: Pimoroni Pico Plus 2 (RP2350, 16 MB flash, 8 MB PSRAM, USB-C). It has parts underneath, so it plugs into two 20-pin sockets.\n"
         "Its USB-C port is the player's only power and data connector: put it on the rear edge of the board.\n"
         "Pin plan (from docs/DESIGN.md 5.4)\n"
         "  GP0-GP7  YM2612 data D0-D7 (PIO, must stay in order)    GP8, GP9  A0, A1    GP10 /WR    GP11 /IC (reset)\n"
@@ -167,7 +167,7 @@ sc.add("ym2612:YM2612", "U", "YM2612 (socket only, chip fitted by hand)", 200.66
 for i in range(2):
     res(sc, "430", 279.4 + i * 20.32, 76.2, "+5V", f"LED_WIN{i + 1}")
     sc.add("Device:LED", "D", "warm white 3 mm", 279.4 + i * 20.32, 111.76, {"2": f"LED_WIN{i + 1}", "1": "GND"}, rot=90,
-           fields=f("LED_THT:LED_D3.0mm", "", "3 mm through-hole LED, warm white, about 3V at 5 mA, leads left long"))
+           fields=f("LED_THT:LED_D3.0mm", "LED3WAW", "3 mm through-hole LED, warm white 2800K, 3.2V. Any 3 mm warm white will do. Leads left long"))
 for i, (net, gnd) in enumerate([("+5V_YM", "GND"), ("+5V_YM", "GND"), ("+5V_YM", "GND"), ("+5V_YM", "GND"), ("+5V_YM", "GND")]):
     cap(sc, "100nF", 266.7 + i * 12.7, 180.34, net, gnd)
 cap(sc, "10uF", 330.2, 180.34, "+5V_YM", fp=FP_C0805, spec="X5R, 16V, 0805")
@@ -188,6 +188,8 @@ au = Sheet(P, "audio.kicad_sch", "Audio out", paper="A2")
 # Cold leg = filter out, hot leg = filter out inverted again, so hot has the chip's own polarity.
 OPA = f("Package_SO:SOIC-8_3.9x4.9mm_P1.27mm", "OPA2350UA", "dual rail-to-rail op-amp, 2.7-5.5V")
 NJM = f("Package_DIP:DIP-8_W7.62mm", "NJM4556AD", "dual high-current op-amp, DIP-8")
+# The dual slide pot either solders to the board (needs Bourns's footprint) or sits in the case top and plugs into a 6-pin header.
+SLIDER_ON_BOARD = False
 POT = f("", "PTA2044-2015DPA103",
         "Bourns 20 mm travel dual-gang slide pot, 10k audio taper, 15 mm metal lever. Footprint still to draw.")
 for side, ch, mo, y0 in [(0, "L", "YM_MOL", 110.49), (1, "R", "YM_MOR", 270.51)]:
@@ -225,8 +227,9 @@ for side, ch, mo, y0 in [(0, "L", "YM_MOL", 110.49), (1, "R", "YM_MOR", 270.51)]
     au.add(CP, "C", "10uF", 175.26, yh, {"1": f"COLD_{ch}", "2": f"VOL_{ch}_IN"}, rot=90,
            fields=f(FP_CP5, spec="electrolytic, 16V"))
     gang = {"1": "VOL_L_IN", "2": "VOL_L_W", "3": "GNDA"} if not side else {"4": "VOL_R_IN", "5": "VOL_R_W", "6": "GNDA"}
-    au.add("Device:R_Potentiometer_Dual_Separate", "RV", "10k audio, dual slide", 205.74, yh, gang, unit=1 + side,
-           ref="RV1", fields=POT)
+    if SLIDER_ON_BOARD:
+        au.add("Device:R_Potentiometer_Dual_Separate", "RV", "10k audio, dual slide", 205.74, yh, gang, unit=1 + side,
+               ref="RV1", fields=POT)
     cap(au, "1uF", 243.84, yh, f"VOL_{ch}_W", f"HP_{ch}_IN", sideways=True, fp="Capacitor_SMD:C_1206_3216Metric",
         spec="film or X7R 1206, 25V")
     res(au, "100k", 264.16, yh + 15.24, "VREF", f"HP_{ch}_IN")
@@ -237,6 +240,12 @@ for side, ch, mo, y0 in [(0, "L", "YM_MOL", 110.49), (1, "R", "YM_MOR", 270.51)]
     res(au, "10", 386.08, yh + 2.54, f"HP_{ch}_DC", f"PHONE_{ch}", sideways=True)
     res(au, "10k", 360.68, yh + 15.24, f"HP_{ch}_DC", "GNDA")
 P.counters["U"] = 8
+if not SLIDER_ON_BOARD:
+    au.add("Connector_Generic:Conn_01x06", "J", "Volume slider (dual 10k audio taper, in the case)", 205.74, 160.02,
+           {"1": "VOL_L_IN", "2": "VOL_L_W", "3": "GNDA", "4": "VOL_R_IN", "5": "VOL_R_W", "6": "GNDA"},
+           fields=f("Connector_JST:JST_XH_B6B-XH-A_1x06_P2.50mm_Vertical", "B6B-XH-A(LF)(SN)",
+                    "JST XH 6-pin header. Wire a dual 10k audio-taper slide pot: L top/wiper/bottom on 1-3, R on 4-6."),
+           stagger=True)
 au.add("Connector_Audio:AudioJack3", "J", "3.5 mm headphones (front)", 426.72, 101.6,
        {"T": "PHONE_L", "R": "PHONE_R", "S": "GNDA"},
        fields=f("Connector_Audio:Jack_3.5mm_CUI_SJ1-3523N_Horizontal", "SJ1-3523N", "CUI 3.5 mm stereo jack, horizontal"))
@@ -258,7 +267,7 @@ au.text(25.4, 20.32,
         "   That matches the 47k / 1nF Model 1 filter used by MIDIbox. Change C to 560pF for 2.84 kHz (the VA3 knee) after the A/B test in M4.\n"
         "3. Balanced line outs: cold = filter out, hot = filter out inverted again by a 10k / 10k OPA2350 stage. 100 ohm + 10uF + 100k bleed\n"
         "   on each leg into a Neutrik 1/4in TRS (tip hot, ring cold, sleeve to GNDA through a 0 ohm ground-lift footprint).\n"
-        "4. Headphones: 10uF DC block, dual slide pot (volume, headphones only), 1uF + 100k re-bias to VREF, NJM4556A buffer,\n"
+        "4. Headphones: 10uF DC block, dual slide pot on its 6-pin plug (volume, headphones only), 1uF + 100k re-bias to VREF, NJM4556A buffer,\n"
         "   220uF + 10 ohm into the front 3.5 mm jack. 10k bleeds the output cap so plugging in doesn't pop.", size=1.5)
 
 # =============================================================== front panel

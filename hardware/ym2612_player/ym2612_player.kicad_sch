@@ -82,7 +82,7 @@
   (sheet (at 96.52 86.36) (size 50.8 20.32) (fields_autoplaced)
     (stroke (width 0.1524) (type solid))
     (fill (color 0 0 0 0.0000))
-    (uuid 9b8ee19b-ff40-5e09-97e6-87df514c8316)
+    (uuid afa70b82-f181-5f4f-b573-0b109136949e)
     (property "Sheetname" "Front panel" (at 96.52 85.6484 0)
       (effects (font (size 1.27 1.27)) (justify left bottom))
     )
@@ -97,7 +97,7 @@
   )
   (text "How to read this schematic\nEach box is a page. Wires end in name tags (labels): any two tags with the same name are connected,\neven on different pages. The symbols marked +5V, +5V_YM, +4V5A, +3V3, GND and GNDA are power connections.\nParts marked DNP are not fitted by PCBWay. Pages: Power > Controller > Sound chip > Audio out > Front panel." (at 30.48 140 0)
     (effects (font (size 1.8 1.8)) (justify left top))
-    (uuid 510e08dd-ee01-5332-823e-ff0543696912)
+    (uuid bcc6e975-9371-588b-8db9-91977f853da4)
   )
   (sheet_instances
     (path "/" (page "1"))
