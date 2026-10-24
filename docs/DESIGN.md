@@ -1,10 +1,10 @@
 # Chip Shrine: YM2612 Player — Rev A Design
 
-Status: Draft v0.4 · Oct 24, 2026 · Owner: Joey
+Status: Draft v0.5 · Oct 24, 2026 · Owner: Joey
 
 > A small box with a real Sega Genesis sound chip, the Yamaha YM2612. Put VGM files
-> on a microSD card, pick a song with the buttons, and hear the real chip play it
-> through a headphone jack.
+> onto it over USB-C like a thumb drive, pick a song with the buttons, and hear the
+> real chip play it through a headphone jack.
 
 **Rev A is the simplest, lowest-cost version that plays music.** It does VGM import and
 playback and nothing else. The lights, synth knobs, fuller transport, and lit window
@@ -20,7 +20,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 **Features (the whole list)**
 
-1. **VGM import:** copy `.vgm` (and ideally `.vgz`) files onto a microSD card on any computer, then put the card in the player.
+1. **VGM import over USB-C:** plug the player into a computer and it shows up as a USB drive. Drag `.vgm` and `.vgz` files onto it. No memory card.
 2. **Playback** on a real YM2612.
 3. **One 3.5 mm stereo jack** that drives headphones and also works as a line out.
 4. **A display** that shows the file being played.
@@ -36,11 +36,13 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 ## 2. How you use it
 
-1. Plug the player into a USB charger or computer. The display shows the first track on the card.
-2. **Up / Down** move through the track list.
-3. **Start** plays the selected track. The display shows the name and elapsed time.
-4. **Stop** stops playback and returns to the track list.
-5. When a track ends, the player stops. If the file has a loop point, the looped part plays
+1. To add songs, plug the player into a computer with a USB-C cable, drag files onto the **CHIPSHRINE** drive, then eject it.
+   The player rescans its files after you eject.
+2. To play, power it from the computer (after ejecting) or any USB-C charger. The display shows the first track.
+3. **Up / Down** move through the track list.
+4. **Start** plays the selected track. The display shows the name and elapsed time.
+5. **Stop** stops playback and returns to the track list.
+6. When a track ends, the player stops. If the file has a loop point, the looped part plays
    **twice**, then the player stops.
 
 ### Display (128 × 64 OLED)
@@ -74,11 +76,13 @@ When stopped, the screen shows a scrolling list of tracks with the selected one 
 
 ```mermaid
 flowchart LR
-    SD[(microSD card<br/>VGM / VGZ files)]
+    PC[Computer<br/>drag and drop]
 
-    subgraph PICO["Raspberry Pi Pico 2 (RP2350)"]
+    subgraph PICO["Pimoroni Pico Plus 2 (RP2350)"]
+        USB[USB drive<br/>over USB-C]
+        FLASH[(16 MB flash<br/>VGM / VGZ files)]
         PARSE[VGM parser]
-        PCM[(Sample data<br/>in RAM)]
+        PCM[(Sample data<br/>in PSRAM)]
         SCHED[Write scheduler<br/>44.1 kHz timeline]
         DRV[YM2612 driver<br/>PIO bus writes]
         CLKGEN[Clock output<br/>7.67 MHz]
@@ -92,7 +96,7 @@ flowchart LR
     OLED[128x64 OLED]
     BTN[Up / Down /<br/>Start / Stop]
 
-    SD --> PARSE
+    PC --> USB --> FLASH --> PARSE
     PARSE -- "sample data" --> PCM
     PARSE -- "timed writes" --> SCHED
     PCM -- "DAC bytes" --> SCHED
@@ -104,7 +108,7 @@ flowchart LR
     UI -- "start, stop" --> SCHED
 ```
 
-In plain words: the Pico reads a VGM file from the card. The file is a list of "write
+In plain words: the Pico reads a VGM file from its own flash memory, where you copied it over USB. The file is a list of "write
 this value to this chip setting, then wait this long". One of the Pico's two cores
 plays those writes to the YM2612 at the right moments. The other core runs the display
 and buttons. The YM2612 makes the sound, and the op-amp makes it loud enough for
@@ -114,9 +118,10 @@ headphones.
 
 | Module | Job |
 | --- | --- |
-| **Storage** | FAT32 microSD over SPI (FatFs). Builds the track list from the card's files. |
-| **VGM parser** | Reads the header (clock, length, loop point) and GD3 tags (title, game). Turns commands into timed writes: YM2612 port 0/1 writes, waits, PCM data blocks, DAC writes, and DAC stream commands. Skips PSG writes. VGZ files are unzipped while loading (nice to have in Rev A; VGM is the must). |
-| **Sample data** | Loads the song's PCM samples into RAM (the Pico 2 has 520 KB). If a file's samples don't fit, they're streamed from the card through a buffer. |
+| **Storage** | A FAT filesystem in the board's flash (about 14 MB free after the firmware), read with FatFs. Builds the track list. |
+| **USB drive** | TinyUSB mass-storage device, so a computer sees the flash as a drive called CHIPSHRINE. While the computer has it mounted, playback is off; after eject, the player rescans the files. |
+| **VGM parser** | Reads the header (clock, length, loop point) and GD3 tags (title, game). Turns commands into timed writes: YM2612 port 0/1 writes, waits, PCM data blocks, DAC writes, and DAC stream commands. Skips PSG writes. VGZ files are unzipped while loading, which matters more now since storage is limited. |
+| **Sample data** | Loads the song's PCM samples into the board's 8 MB PSRAM, so even sample-heavy tracks fit. |
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time (1/44,100 s). Stops at the end, or after the loop has played twice. |
 | **YM2612 driver** | PIO program: put A1/A0 and D0–D7 on the pins, pulse /WR, wait the minimum gap. Also pulses /IC (reset) at power-up and on Stop to silence the chip. |
 | **UI** | Runs on core 0. Debounces the 4 buttons and draws the OLED. Never delays a chip write. |
@@ -126,12 +131,11 @@ headphones.
 ### 5.1 Block diagram
 
 ```
-Pico micro-USB ── VBUS 5V ─┬─ ferrite + caps ── YM2612, 74HCT buffers
+Pico USB-C ── VBUS 5V ──────┬─ ferrite + caps ── YM2612, 74HCT buffers
                            ├─ ferrite + caps ── NJM4556A (audio)
-                           └─ Pico's own 3.3V regulator ── Pico, OLED, microSD
+                           └─ Pico's own 3.3V regulator ── Pico, OLED
 
 Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── NJM4556A ── 3.5 mm jack
-     ├── SPI ── microSD socket
      ├── I²C ── OLED module
      └── 4 buttons to GND
 ```
@@ -140,20 +144,19 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── NJM4556A ── 
 
 | Part | Choice | Rough cost |
 | --- | --- | --- |
-| Microcontroller | **Raspberry Pi Pico 2** (RP2350), soldered by its castellated edges or on headers | $5 |
+| Microcontroller | **Pimoroni Pico Plus 2** (RP2350, 16 MB flash, 8 MB PSRAM, USB-C), Pico-sized, soldered by its castellated edges or on headers | $12–15 |
 | Sound chip | YM2612, pulled from a Model 1 Genesis or bought tested | $5–15 |
 | Chip socket | 24-pin DIP, turned-pin | $0.50 |
 | Level shifting | 2× 74HCT541 (one-way 3.3V → 5V buffers, powered from 5V) | $1 |
 | Headphone driver | NJM4556A dual op-amp, single 5V supply, AC-coupled output | $1 |
 | Audio jack | 3.5 mm stereo (TRS) PCB jack | $0.50 |
 | Display | 0.96" 128×64 SSD1306 OLED module, I²C, 4 pins | $2–3 |
-| Storage | microSD socket (SPI mode) | $0.50–1 |
 | Buttons | 4× 6 mm tactile switches | $0.40 |
-| Power | Pico's own micro-USB port (no extra connector) | $0 |
+| Power and file loading | The Pico board's own USB-C port (no extra connector) | $0 |
 | Passives | Decoupling, ferrites, op-amp resistors and caps, output caps | $2 |
 | PCB | 2-layer, about 100 × 70 mm | about $1 each in a batch of 5 |
 
-**Rough total: $20–30 per board** before the enclosure, mostly depending on the YM2612's price.
+**Rough total: $25–35 per board** before the enclosure, mostly depending on the YM2612's price.
 
 ### 5.3 Cost savers in this design
 
@@ -163,12 +166,12 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── NJM4556A ── 
   channel to reach 5V levels. **Proposal:** add an unpopulated footprint for an oscillator
   can as a fallback.
 - **No busy-flag reads,** so the buffers only go one way and /RD is tied high.
-- **No USB connector, regulator, or power switch.** The Pico's micro-USB port powers everything.
+- **No memory card, USB connector, regulator, or power switch.** The Pico board's USB-C port loads files and powers everything.
 - **No volume control** (see §8).
 
 ### 5.4 Pin map (Proposal)
 
-Consecutive pins keep the PIO program simple. Check each against the RP2350 datasheet in KiCad.
+Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard Pico header for GP0–GP28. Check each pin against its pinout in KiCad.
 
 | Pico GPIO | Signal | Goes to |
 | --- | --- | --- |
@@ -182,10 +185,6 @@ Consecutive pins keep the PIO program simple. Check each against the RP2350 data
 | GP13 | Button Down | to GND, internal pull-up |
 | GP14 | OLED SDA (I²C1) | OLED |
 | GP15 | OLED SCL (I²C1) | OLED |
-| GP16 | SD MISO (SPI0) | microSD |
-| GP17 | SD CS | microSD |
-| GP18 | SD SCK | microSD |
-| GP19 | SD MOSI | microSD |
 | GP20 | Button Start | to GND, internal pull-up |
 | GP22 | Button Stop | to GND, internal pull-up |
 | — | /CS tied low, /RD tied high | YM2612 |
@@ -208,24 +207,23 @@ Consecutive pins keep the PIO program simple. Check each against the RP2350 data
 ## 6. KiCad notes for Joey's "YM2612 player" project
 
 - Symbols you may need to make: YM2612 (DIP-24) and the OLED module (4-pin header).
-  The Pico 2 has an official KiCad footprint from Raspberry Pi.
-- Put the YM2612, buffers, and op-amp on the 5V side of the board, and the microSD and OLED
-  on the 3.3V side.
+  The Pico Plus 2 uses the standard Pico footprint (Raspberry Pi's official KiCad footprint works).
+- Put the YM2612, buffers, and op-amp on the 5V side of the board, and the OLED on the 3.3V side.
 - Keep the 7.67 MHz clock trace short, and away from the audio traces.
-- Place the jack, the card slot, and the Pico's USB port on board edges so the case can expose them.
+- Place the jack and the Pico board's USB-C port on board edges so the case can expose them.
 - Add test points for D0–D7, A0, A1, /WR, and the clock for the logic analyzer in M1.
 
 ## 7. Milestones
 
 | # | Milestone | Done when |
 | --- | --- | --- |
-| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), Pico 2, buffers, op-amp, OLED, microSD socket |
+| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), Pico Plus 2, buffers, op-amp, OLED |
 | M1 | **First sound** | Breadboard: the Pico clocks the YM2612 and plays a hard-coded FM note; write gap measured |
-| M2 | **Play a VGM** | A Genesis VGM plays from microSD start to finish, samples included |
+| M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included |
 | M3 | **Display + buttons** | Track list, Up/Down/Start/Stop, title and time on the OLED |
 | M4 | **Clean audio** | Headphones and line out sound clean with no hum or whine |
 | M5 | **Schematic + PCB** | Joey's KiCad project matches this doc; boards ordered |
-| M6 | **Rev A built** | Assembled board plays from the card in a simple case |
+| M6 | **Rev A built** | Assembled board loads files over USB-C and plays them in a simple case |
 
 ## 8. Open questions
 
@@ -233,7 +231,8 @@ Consecutive pins keep the PIO program simple. Check each against the RP2350 data
   headphones. Add a small dual volume wheel (about $0.50), or keep it fixed for Rev A?
 - [ ] **Buttons:** four buttons (Up, Down, Start, Stop), or three with Start/Stop as one toggle?
 - [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
-- [ ] **VGZ:** required in Rev A, or VGM only to start?
+- [x] **File loading:** over USB-C into the board's flash, no microSD (Joey, Oct 24).
+- [ ] **VGZ:** proposed as required in Rev A, since zipped files stretch the 16 MB of storage.
 
 ## 9. Glossary
 
