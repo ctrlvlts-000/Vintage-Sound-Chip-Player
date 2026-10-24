@@ -1,6 +1,6 @@
 # YM2612 Player — Rev A Design
 
-Status: Draft v1.0 · Oct 24, 2026 · Owner: Joey
+Status: Draft v1.1 · Oct 24, 2026 · Concept stage: the chassis is conceptual, and specs may still change · Owner: Joey
 
 > A small box with a real Sega Genesis sound chip, the Yamaha YM2612. Put VGM files
 > onto it over USB-C like a thumb drive, pick a song with the buttons, and hear the
@@ -208,7 +208,7 @@ promised to users):
 
 ### 2.8 Chassis look: a 16-bit console homage
 
-**Decision (Joey, Oct 24):** the chassis pays homage to the original Sega Mega Drive
+**Concept (Joey, Oct 24), open to change:** the chassis pays homage to the original Sega Mega Drive
 (first model), using its shapes and colours but **no Sega logos or wordmarks**. Joey designs
 and 3D prints it. Concept: [Rev A panel concept](https://claude.ai/artifact/8sheBY3bZY6DmseLGqauJz).
 
