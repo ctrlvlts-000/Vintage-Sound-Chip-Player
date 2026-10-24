@@ -74,11 +74,13 @@ open(dsn, "w").write(text)
 if len(sys.argv) > 3:
     ses = sys.argv[3]  # reuse a finished Freerouting session
 else:
-    subprocess.run(["xvfb-run", "-a", "java", "-jar", JAR, "-de", dsn, "-do", ses, "-mp", "40", "-dct", "0"], check=True)
+    subprocess.run(["xvfb-run", "-a", "java", "-jar", JAR, "-de", dsn, "-do", ses, "-mp", os.environ.get("FR_PASSES", "40"), "-dct", "0"], check=True)
 
 for z in zones:
     board.Add(z)
+for t in list(board.GetTracks()):  # the session holds every wire, old and new
+    board.Remove(t)
 import_ses(board, ses)
 pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 pcbnew.SaveBoard(PCB, board)
-print("routed", len(board.GetTracks()), "track segments and vias")
+print("routed")

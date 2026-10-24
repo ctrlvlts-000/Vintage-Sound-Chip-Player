@@ -99,7 +99,7 @@ pico = {
 for g in ["3", "8", "13", "18", "23", "28", "38"]:
     pico[g] = "GND"
 mc.add("ym2612:PicoPlus2", "U", "Pimoroni Pico Plus 2", 165.1, 139.7, pico,
-       fields=f("ym2612:Pimoroni_PicoPlus2_SMD", "PIM724", "Pimoroni Pico Plus 2, Digi-Key PIM724, soldered flat by its castellated edges"))
+       fields=f("ym2612:Pimoroni_PicoPlus2_Socketed", "PIM724", "Pimoroni Pico Plus 2, Digi-Key PIM724, with 2x 20-pin male headers soldered on, plugged into sockets U2-SKT"))
 cap(mc, "10uF", 241.3, 88.9, "+3V3", fp=FP_C0805, spec="X5R, 10V, 0805")
 cap(mc, "100nF", 254, 88.9, "+3V3")
 # Keep the YM2612 quiet while the Pico boots: /IC held low (reset), /WR high, address lines low.
@@ -117,7 +117,7 @@ for i, net in enumerate(tps):
     mc.add("Connector:TestPoint", "TP", net.replace("MCU_", ""), 297.18 + (i % 5) * 20.32, 76.2 + (i // 5) * 33.02,
            {"1": net}, fields=f("TestPoint:TestPoint_Pad_D1.5mm"))
 mc.text(25.4, 25.4,
-        "CONTROLLER: Pimoroni Pico Plus 2 (RP2350, 16 MB flash, 8 MB PSRAM, USB-C). PCBWay solders it flat by its castellated edges.\n"
+        "CONTROLLER: Pimoroni Pico Plus 2 (RP2350, 16 MB flash, 8 MB PSRAM, USB-C). It has parts underneath, so it plugs into two 20-pin sockets.\n"
         "Its USB-C port is the player's only power and data connector: put it on the rear edge of the board.\n"
         "Pin plan (from docs/DESIGN.md 5.4)\n"
         "  GP0-GP7  YM2612 data D0-D7 (PIO, must stay in order)    GP8, GP9  A0, A1    GP10 /WR    GP11 /IC (reset)\n"
@@ -167,7 +167,7 @@ sc.add("ym2612:YM2612", "U", "YM2612 (socket only, chip fitted by hand)", 200.66
 for i in range(2):
     res(sc, "430", 279.4 + i * 20.32, 76.2, "+5V", f"LED_WIN{i + 1}")
     sc.add("Device:LED", "D", "warm white 3 mm", 279.4 + i * 20.32, 111.76, {"2": f"LED_WIN{i + 1}", "1": "GND"}, rot=90,
-           fields=f("LED_THT:LED_D3.0mm", "", "3 mm through-hole LED, warm white, about 3V at 5 mA, leads left long"))
+           fields=f("LED_THT:LED_D3.0mm", "LED3WAW", "3 mm through-hole LED, warm white 2800K, 3.2V. Any 3 mm warm white will do. Leads left long"))
 for i, (net, gnd) in enumerate([("+5V_YM", "GND"), ("+5V_YM", "GND"), ("+5V_YM", "GND"), ("+5V_YM", "GND"), ("+5V_YM", "GND")]):
     cap(sc, "100nF", 266.7 + i * 12.7, 180.34, net, gnd)
 cap(sc, "10uF", 330.2, 180.34, "+5V_YM", fp=FP_C0805, spec="X5R, 16V, 0805")

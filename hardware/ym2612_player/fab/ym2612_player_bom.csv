@@ -12,7 +12,7 @@ C14,1,10uF,Any,generic,"X5R, 16V, 0805",C_0805_2012Metric,SMD,Fit
 "C20,C27",2,1uF,Any,generic,"film or X7R 1206, 25V",C_1206_3216Metric,SMD,Fit
 "C21,C28",2,220uF,Any,generic,"electrolytic, 10V",CP_Elec_6.3x7.7,SMD,Fit
 "C35,C36",2,10nF,Any,generic,"X7R, 16V",C_0603_1608Metric,SMD,Fit
-"D1,D2",2,warm white 3 mm,Any,generic,"3 mm through-hole LED, warm white, about 3V at 5 mA, leads left long",LED_D3.0mm,THT,Fit
+"D1,D2",2,warm white 3 mm,Lumimax,LED3WAW,"3 mm through-hole LED, warm white 2800K, 3.2V. Any 3 mm warm white will do. Leads left long",LED_D3.0mm,THT,Fit
 "FB1,FB2",2,600R@100MHz,Murata,BLM18PG221SN1D,"ferrite bead, 0603, 1A+",L_0603_1608Metric,SMD,Fit
 J1,0,Spare GPIO (not fitted),Any,generic,,PinHeader_1x04_P2.54mm_Vertical,THT,Do not fit
 "J2,J3",2,"1/4"" TRS balanced out L / 1/4"" TRS balanced out R",Neutrik,NMJ6HCD2,"Neutrik 1/4in stereo jack, horizontal PCB. The footprint's SN pad is left unconnected.",Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal,THT,Fit
@@ -35,9 +35,11 @@ R18,0,33,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Do not fit
 "SW1,SW2,SW3,SW4,SW5,SW6,SW7",7,Play (red cap) / Stop / Left / Right / Edit / Exit / Write,Omron,B3F-4055,"Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap",SW_PUSH-12mm,THT,Fit
 SW8,1,Data knob,Bourns,PEC11R-4215F-N0024,"Bourns 24-step encoder, no push switch, 15 mm shaft (EC11 footprint)",RotaryEncoder_Alps_EC11E_Vertical_H20mm,THT,Fit
 U1,1,LP5907MFX-4.5,Texas Instruments,LP5907MFX-4.5/NOPB,"low-noise LDO, 4.5V, 250mA",SOT-23-5,SMD,Fit
-U2,1,Pimoroni Pico Plus 2,Pimoroni,PIM724,"Pimoroni Pico Plus 2, Digi-Key PIM724, soldered flat by its castellated edges",Pimoroni_PicoPlus2_SMD,SMD,Fit
+U2,1,Pimoroni Pico Plus 2,Pimoroni,PIM724,"Pimoroni Pico Plus 2, Digi-Key PIM724, with 2x 20-pin male headers soldered on, plugged into sockets U2-SKT",Pimoroni_PicoPlus2_Socketed,THT,Fit
 "U3,U4",2,74HCT541,Nexperia,"74HCT541D,653","octal buffer, HCT, SOIC-20",SOIC-20W_7.5x12.8mm_P1.27mm,SMD,Fit
 U5,1,"YM2612 (socket only, chip fitted by hand)",Mill-Max,110-43-624-41-001000,Mill-Max 24-pin 600 mil turned-pin DIP socket. PCBWay fits the socket only.,DIP-24_W15.24mm_Socket,THT,Fit
 "U6,U7",2,OPA2350UA,Texas Instruments,OPA2350UA,"dual rail-to-rail op-amp, 2.7-5.5V",SOIC-8_3.9x4.9mm_P1.27mm,SMD,Fit
 U8,1,NJM4556AD,Nisshinbo (NJR),NJM4556AD,"dual high-current op-amp, DIP-8",DIP-8_W7.62mm,THT,Fit
 X1,0,"7.670454 MHz, 5V (not fitted)",Any,generic,"half-size DIP-8 oscillator can, 5V CMOS, 7.670454 MHz",Oscillator_DIP-8,THT,Do not fit
+U2-SKT,2,"1x20 female socket, 2.54 mm",Any,generic,"Soldered to the board in U2's two rows of holes, 8.5 mm tall",1x20 P2.54mm vertical,THT,Fit
+U2-HDR,2,"1x20 male header, 2.54 mm",Any,generic,Soldered to the Pico Plus 2 (U2) so it plugs into U2-SKT,1x20 P2.54mm vertical,THT,Fit

@@ -12,8 +12,9 @@ MAKERS = {
     "OPA2350UA": "Texas Instruments", "NJM4556AD": "Nisshinbo (NJR)", "NMJ6HCD2": "Neutrik",
     "SJ1-3523N": "CUI Devices / Same Sky", "PTA2044-2015DPA103": "Bourns", "B3F-4055": "Omron",
     "PEC11R-4215F-N0024": "Bourns", "BSS138": "onsemi", "B4B-XH-A(LF)(SN)": "JST", "B6B-XH-A(LF)(SN)": "JST",
+    "LED3WAW": "Lumimax",
 }
-THT = ("DIP", "Jack", "LED_D3", "SW_PUSH", "RotaryEncoder", "JST", "PinHeader", "Oscillator_DIP")
+THT = ("Socketed", "DIP", "Jack", "LED_D3", "SW_PUSH", "RotaryEncoder", "JST", "PinHeader", "Oscillator_DIP")
 
 
 def natural(ref):
@@ -48,6 +49,12 @@ for (_, fp, mpn, spec, dnp), g in groups.items():
         "Type": kind, "Fit": "Do not fit" if dnp else "Fit",
     })
 rows.sort(key=lambda r: natural(r["Designator"].split(",")[0]))
+# The Pico Plus 2 stands on sockets (it has parts underneath). These have no symbol of their own.
+for ref, value, spec in [
+        ("U2-SKT", "1x20 female socket, 2.54 mm", "Soldered to the board in U2's two rows of holes, 8.5 mm tall"),
+        ("U2-HDR", "1x20 male header, 2.54 mm", "Soldered to the Pico Plus 2 (U2) so it plugs into U2-SKT")]:
+    rows.append({"Designator": ref, "Qty": 2, "Value": value, "Manufacturer": "Any", "Manufacturer Part Number": "generic",
+                 "Description": spec, "Package / Footprint": "1x20 P2.54mm vertical", "Type": "THT", "Fit": "Fit"})
 out = os.path.join(os.path.dirname(__file__), "..", "ym2612_player", "bom.csv")
 with open(out, "w", newline="") as fh:
     w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))

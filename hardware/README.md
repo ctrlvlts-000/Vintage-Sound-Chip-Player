@@ -35,7 +35,7 @@ connected on purpose". A part crossed out in red is "do not fit": it has a footp
 | Page | What's on it |
 | --- | --- |
 | Power | 5V from the Pico's USB-C, a ferrite-filtered 5V for the chip, and a quiet 4.5V LDO rail for the audio |
-| Controller | Pimoroni Pico Plus 2 soldered flat, boot-time pull resistors, spare-pin header, test points |
+| Controller | Pimoroni Pico Plus 2 on two 20-pin sockets, boot-time pull resistors, spare-pin header, test points |
 | Sound chip | YM2612 socket, two 74HCT541 buffers (3.3V to 5V) with 100 ohm resistors, clock options, window LEDs |
 | Audio out | Model 1 style filter, balanced 1/4" outs, headphone amp with the dual slide volume |
 | Front panel | 7 buttons (12 mm), data knob, I2C level shifter, LCD connector |
@@ -73,8 +73,9 @@ part before anything is made and email questions. Nothing is charged until you a
 
 ## Choices made in this draft
 
-- **Pico Plus 2 soldered flat** by its castellated edges (Digi-Key part PIM724, so PCBWay can buy it). Lowest
-  height, nothing to wiggle loose. If you'd rather have it removable, it can sit on two 20-pin sockets instead.
+- **Pico Plus 2 on sockets** (Digi-Key part PIM724, so PCBWay can buy it). It has chips and a connector on its
+  underside, so it can't be soldered flat. PCBWay solders two 1x20 female sockets to the board (BOM line `U2-SKT`);
+  the Pico gets two 1x20 male headers (`U2-HDR`) and plugs in, about 9 mm above the board. Removable (Joey, Oct 24).
 - **YM2612 socket:** Mill-Max turned-pin, 24-pin, 600 mil wide. PCBWay solders the socket only.
 - **Clock:** the Pico makes the 7.67 MHz clock (as the design doc proposes). There's an unfitted footprint for a
   7.670454 MHz oscillator can, so switching to exact Genesis pitch is a two-part change with no new board.
@@ -88,10 +89,10 @@ part before anything is made and email questions. Nothing is charged until you a
 ## Still to do before ordering
 
 1. **Case check:** the positions above are a first guess. Check them against your enclosure and say what should move.
-2. **Pico Plus 2 footprint check:** `ym2612.pretty/Pimoroni_PicoPlus2_SMD` uses the standard Pico pad positions.
-   Check it against a real board or Pimoroni's drawing before ordering.
-3. **Window LEDs:** pick an exact warm-white 3 mm LED for PCBWay (any will do electrically).
-4. **Silkscreen tidy-up:** some part labels overlap pads or each other. This doesn't affect how the board works.
+2. **Pico Plus 2 holes:** `ym2612.pretty/Pimoroni_PicoPlus2_Socketed` uses the standard Pico hole pattern
+   (2.54 mm pitch, rows 17.78 mm apart), which Pimoroni keeps. A quick check with a real board and sockets is cheap.
+
+Window LEDs are Lumimax LED3WAW (3 mm, warm white 2800K, Digi-Key); any 3 mm warm white will do.
 
 ## Regenerating
 
@@ -99,5 +100,5 @@ part before anything is made and email questions. Nothing is charged until you a
 re-exports the PDF and BOM (needs KiCad installed). Once anyone edits the schematic in KiCad, the KiCad files become
 the real source and the script should not be rerun.
 
-`tools/layout.py` places the parts on the board, `tools/route.py` routes it with Freerouting, and `tools/fab.sh` makes
-the PCBWay files. The same rule applies: once the board has been edited in KiCad, edit it there.
+`tools/layout.py` places the parts on the board, `tools/route.py` routes it with Freerouting, `tools/silk.py` moves
+the part labels clear of pads and each other, and `tools/fab.sh` makes the PCBWay files. The same rule applies: once the board has been edited in KiCad, edit it there.
