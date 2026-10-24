@@ -203,7 +203,7 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Level shifting | 2× 74HCT541 (one-way 3.3V → 5V buffers, powered from 5V) | $1 |
 | Filter / buffer | OPA2350 low-noise, rail-to-rail dual op-amp rated for 2.7–5.5V (L and R) | $2 |
 | Headphone driver | NJM4556A dual op-amp, AC-coupled output | $1 |
-| Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $1 |
+| Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
 | Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
 | Audio jacks | 3.5 mm stereo headphone jack + 2× 1/4" TRS panel jacks | $3–4 |
 | Display | 0.96" 128×64 SSD1306 OLED module, I²C, 4 pins | $2–3 |
