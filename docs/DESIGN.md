@@ -1,331 +1,484 @@
-# Chip Shrine: YM2612 Player — Proof of Concept Design
+# YM2612 Player — Rev A Design
 
-Status: Draft v0.3 · Oct 23, 2026 · Owner: Joey
+Status: Draft v1.1 · Oct 24, 2026 · Concept stage: the chassis is conceptual, and specs may still change · Owner: Joey
 
-> A desktop box with a real Sega Genesis sound chip, the Yamaha YM2612, lit behind
-> a window. It plays VGM files, shows what the chip is doing on a wall of lights,
-> and lets you grab the chip's registers to bend the sound while a song plays.
+> A small box with a real Sega Genesis sound chip, the Yamaha YM2612. Put VGM files
+> onto it over USB-C like a thumb drive, pick a song with the buttons, and hear the
+> real chip play it through headphones or balanced outputs into your studio.
 
-This is a **proof of concept** for one chip only. Swappable chips and a product
-series are deliberately out of scope (see §9). Items marked **Proposal** are
+**Who it's for:** retro computer enthusiasts and synth heads, roughly 40–60, who want to hear
+and play with the real silicon from their childhood. Real vintage chips only, no emulation.
+The YM2612 is the first of a planned series of classic chiptune chips.
+
+**Rev A is the simplest, lowest-cost version that plays music.** It does VGM import and
+playback and nothing else. The lights, synth knobs, fuller transport, and lit window
+designed earlier are parked in [LATER-REVISIONS.md](LATER-REVISIONS.md) for Rev B and on.
+
+Joey is drawing the schematic and PCB in a KiCad project called **YM2612 player**. This
+doc is the reference for what goes on that board. Items marked **Proposal** are
 recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 ---
 
-## 1. Goals and non-goals
+## 1. What Rev A does
 
-**Goals**
+**Features (the whole list)**
 
-1. Play Sega Genesis / Mega Drive **VGM and VGZ** files on a real YM2612.
-2. **Lights show the chip's registers** as the music writes them.
-3. **Synth controls** (4 knobs like Timbre and Pitch, each pointed at any channel) to mess with the sound live, with a Bypass button to hear the original song.
-4. CD-player style transport: play, pause, stop, next/previous, seek, loop.
-5. Powered from one USB-C cable.
-6. Joey designs and 3D prints the enclosure; this doc defines what has to fit in it.
+1. **VGM import over USB-C:** plug the player into a computer and it shows up as a USB drive. Drag `.vgm` and `.vgz` files onto it. No memory card.
+2. **Playback** on a real YM2612.
+3. **Audio outputs:** a 3.5 mm headphone jack, plus **two balanced 1/4" TRS line outs** (L and R) for an audio interface. Target: **noise floor at or below −70 dB** (§5.5).
+4. **A 90s character LCD:** a 20 × 4 blue LCD (white characters on blue). It always shows the VGM file that's playing, plus the name of whatever you're editing (§2.1).
+5. **A late-80s digital synth front panel:** one data knob and 7 buttons (Play, Stop, ◀, ▶, Edit, Exit, Write) driving simple menus for every function (§2.2–2.4).
+6. **Full sound editing:** every YM2612 sound parameter, plus Korg DS-8 style quick controls, reachable from the menus (§2.4).
+7. **Lit chip window:** the YM2612 sits under a window in the panel, lit by two warm-white LEDs (§5.7).
+8. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from Ableton or any DAW (§2.5). Costs no extra parts.
 
-**Non-goals for the proof of concept**
+**Not in Rev A**
 
-- Other chips, swappable chip modules, or a shared platform for a series.
-- Formats other than VGM/VGZ.
-- MIDI, CV, Eurorack, Wi-Fi, Bluetooth, battery, companion app.
-- A custom PCB. Dev boards and protoboard are fine; a PCB comes after the concept works.
-- Emulation of any kind. The sound comes from the real chip.
+- Register lights, the 4-knob panel, fancier window lighting (see [LATER-REVISIONS.md](LATER-REVISIONS.md)).
+- Seek, loop, A-B repeat.
+- Genesis PSG parts: only the YM2612 plays (decided Oct 23).
+- DIN or TRS MIDI jacks (USB MIDI only), MIDI out, MIDI control of knobs.
+- Other chips, battery, wireless.
 
-## 2. The chip: YM2612 at a glance
+## 2. Front panel, screen, and menus
 
-What the design has to work with:
+The panel works like a late-80s / early-90s digital synth (think Korg M1, Roland D-50, Yamaha
+DX7): **one data knob, a few buttons, and a small screen with simple menus**. Nothing is
+buried more than one level deep, and the screen always says what you're editing.
 
-| Fact | Why it matters |
+### 2.1 The screen: a 90s blue character LCD
+
+**Decision (Joey, Oct 24):** a **20 × 4 character LCD, white characters on blue** (STN
+negative, blue backlight): the **HiLetgo HD44780 2004A** with an I²C backpack (PCF8574 type).
+Character LCD only, no graphic, OLED, or TFT displays, even vintage-looking ones.
+
+- **Text only:** 4 lines of 20 characters, plus 8 custom characters, used for level bars, ▶ / ■, and a ♪.
+- **Paging:** 20 columns means each page shows one or two parameters with their full names, and ◀ / ▶ step through the rest.
+- **Contrast** is set once with the trimpot on the backpack.
+
+Alternatives considered and not chosen: 16 × 2 (too small for editing), 40 × 4 (harder wiring),
+128 × 64 ST7920 graphic (not a pure character LCD).
+
+**Home screen (VGM mode)** — the playing file is always on the top line:
+
+```
+┌────────────────────┐
+│GHZ.VGM     ▶ 01:24│  file name, play state, time
+│Green Hill Zone     │  title from the GD3 tag
+│Sonic the Hedgehog  │  game
+│03/27 ▮▮▮▮▮▮▮▮▮ VGM │  track number, 6 channels + DAC activity bars, mode
+└────────────────────┘
+```
+
+**Edit page** — the file stays on top, the parameter name is spelled out:
+
+```
+┌────────────────────┐
+│GHZ.VGM     ▶ 01:24│
+│OPERATOR CH2        │  page and channel
+│ATTACK RATE         │  parameter name
+│ 31 [18] 31  28     │  OP1–OP4, cursor on OP2; knob changes it
+└────────────────────┘
+```
+
+### 2.2 Controls
+
+| Control | On the home screen | In the menus |
+| --- | --- | --- |
+| **Data knob** | Scroll the track list | Change the value under the cursor, or pick a menu item |
+| **◀ / ▶** | Previous / next track | Move the cursor between parameters (and across OP1–OP4) |
+| **Play** | Play / pause | Play / pause (you hear edits live) |
+| **Stop** | Stop | Stop |
+| **Edit** | Open the main menu | Enter the selected menu item |
+| **Exit** | — | Back up one level; cancels a prompt |
+| **Write** | — | Save (instrument, or your edits to a song), with an "are you sure" prompt |
+
+That's **7 buttons and 1 knob**. The data knob is turn-only. The knob speeds up when spun
+fast, so long ranges like operator level (0–127) are quick to cover.
+
+### 2.3 Menu map
+
+Press **Edit** on the home screen to get the main menu. Pick a page with the knob, Edit to
+enter it, Exit to come back.
+
+```
+MAIN MENU
+ 1 QUICK EDIT    Channel, Timbre, Timbre EG, Amp EG, Pitch      (Korg DS-8 style)
+ 2 OPERATOR      10 settings × OP1–OP4, shown side by side
+ 3 CHANNEL       Algorithm, Feedback, Pan, LFO depth (AM / PM)
+ 4 LFO           On/off, Speed (all channels)
+ 5 MODE          VGM player  /  MIDI synth
+ 6 INSTRUMENT    Load, Init, Rename  (Write saves)
+ 7 SYSTEM        MIDI channel, Backlight on/off, Loop count, Firmware info
+```
+
+Every page shows the **channel** being edited (CH1–CH6 or ALL). On the Quick Edit page,
+"Channel" is the first item, and every other page follows it.
+
+### 2.4 What can be edited
+
+| Page | Parameter | Range |
+| --- | --- | --- |
+| Quick Edit | Channel | All, 1–6 (each remembers its own edits) |
+| | Timbre | −10 … +10 (modulator levels: dull to bright) |
+| | Timbre EG | −10 … +10 (modulator attack + release) |
+| | Amp EG | −10 … +10 (carrier attack + release: snappy to swelling) |
+| | Pitch | −12 … +12 semitones |
+| Operator (×4) | Attack rate, Decay rate, Sustain rate | 0–31 |
+| | Release rate, Sustain level | 0–15 |
+| | Level | 0–127 |
+| | Multiple (harmonic) | 0–15 |
+| | Detune | −3 … +3 |
+| | Key scaling | 0–3 |
+| | Amplitude mod | off, on |
+| | SSG-EG shape | off, 8 shapes |
+| Channel | Algorithm | 1–8 (the screen draws the operator wiring) |
+| | Feedback | 0–7 |
+| | Pan | L, C, R |
+| | LFO amplitude depth, pitch depth | 0–3, 0–7 |
+| LFO | On/off, Speed | off/on, 0–7 |
+
+That covers every sound setting the YM2612 has.
+
+**What an edit means in each mode**
+
+- **VGM mode:** an edited parameter is **held at your value** on that channel, ignoring what the
+  song writes to it; untouched parameters keep following the song. Quick Edit values are offsets
+  that bend the song's own values instead. **Write** saves your edits next to the song
+  (`GHZ.EDT`), so they come back next time it plays. Holding **Exit** for 2 seconds clears all edits.
+- **MIDI mode:** edits change the instrument you're playing. **Write** saves it to the drive as a
+  `.tfi` file, after you name it with the knob and ◀ / ▶.
+
+### 2.5 MIDI mode
+
+1. Connect the player to a computer. It's a class-compliant USB MIDI device, so it needs no
+   drivers on Windows or macOS and shows up in Ableton Live's MIDI preferences as **YM2612**,
+   alongside the USB drive. Turn on **Track** for it, then set a MIDI track's *MIDI To* to
+   YM2612, channel 1 (the channel is changeable in System).
+2. Notes play the YM2612 with **6-note polyphony** (one note per FM channel; when a 7th note
+   arrives, the oldest note is stolen).
+3. Switch modes in **MODE**. On the home screen in MIDI mode, the knob picks the instrument.
+
+**Where the instruments come from** :
+
+- **Built-in presets:** a small bank of classic Genesis-style sounds stored with the firmware.
+- **Borrowed from songs:** the player scans the VGM files on the drive and lists every
+  distinct instrument it finds, named by song and channel, for example *Green Hill Zone · ch 2*.
+- **Instrument files:** `.tfi` files (a common 42-byte YM2612 instrument format) dragged onto the drive show up too.
+
+**What MIDI controls in Rev A:**
+
+| MIDI message | Effect |
 | --- | --- |
-| 6 FM channels, each with 4 operators | Lots of sound-shaping registers to light up and control |
-| Channel 6 can switch to an 8-bit DAC for samples | Genesis drums and voices; needs fast, steady writes |
-| Two register banks ("ports"): port 0 = channels 1–3 + global settings, port 1 = channels 4–6 | The driver addresses ~320 registers through 2 address lines |
-| 24-pin DIP, 5V, NMOS | Socket it; level-shift from the 3.3V microcontroller |
-| Clock about 7.67 MHz (NTSC Genesis) | Needs its own oscillator; the VGM header states the exact clock |
-| Write-only registers; only a status byte can be read | Player must keep its own copy of every register (shadow registers) |
-| Needs a short wait after each write (busy flag) | Driver polls the busy bit or enforces a measured minimum gap |
-| Analog outputs MOL / MOR with the chip's famous slightly gritty DAC | Needs a buffered output stage; the grit is part of the charm |
+| Note on / off | Plays and releases notes |
+| Velocity | Note loudness (carrier operator levels) |
+| Pitch bend | ±2 semitones |
+| Sustain pedal (CC 64) | Holds notes |
+| Program change | Picks the instrument |
+| All notes off (CC 123) | Silences the chip |
 
-**Decision (Joey, Oct 23): YM2612 sounds only.** Genesis music also uses a second chip,
-the SN76489-style PSG, for some square-wave parts, hi-hats, and effects. VGM files contain
-those writes too, but the player skips them, so only the YM2612 is heard. Some songs will
-be missing a part; the screen shows a small "PSG parts skipped" note on those tracks.
+```
+┌────────────────────┐
+│MIDI SYNTH  CH1  3/6│  mode, MIDI channel, notes sounding
+│014 Green Hill Zone │  instrument number and name
+│ ch2  ALG4 FB5      │  where it came from, quick look at the patch
+│▮▮▮   voices        │  which of the 6 voices are playing
+└────────────────────┘
+```
 
-## 3. How it works
+### 2.6 Adding songs
 
-### 3.1 Audio pipeline
+Plug the player into a computer with USB-C, drag `.vgm` / `.vgz` files onto the **YM2612**
+drive, then eject it. The player rescans its files after you eject. Playback is paused while
+the computer has the drive mounted; MIDI works either way.
+
+### 2.7 Making your own music for it
+
+Any tool that exports **VGM for the YM2612** (Genesis / Mega Drive) can make files for the
+player. Known options (each one's VGM export gets tested on the player in M2 before it's
+promised to users):
+
+| Tool | What it is | Notes |
+| --- | --- | --- |
+| **Furnace Tracker** | Free, open-source tracker | YM2612 support, FM operator editor, VGM export |
+| **DefleMask** | Paid tracker | Genesis and many other chips, VGM export |
+| **MD Synth DAW** | MIT-licensed DAW | Piano roll plus register-track mode; VGM/VGZ and XGM export (XGM isn't played by Rev A) |
+| **VGMM, FMDrive VST** | Instrument / patch tools | Make `.tfi` patches, which MIDI mode loads directly (§2.5) |
+
+### 2.8 Chassis look: a 16-bit console homage
+
+**Concept (Joey, Oct 24), open to change:** the chassis pays homage to the original Sega Mega Drive
+(first model), using its shapes and colours but **no Sega logos or wordmarks**. Joey designs
+and 3D prints it. Concept: [Rev A panel concept](https://claude.ai/artifact/8sheBY3bZY6DmseLGqauJz).
+
+- **Black body,** matte top, with a raised **round disc** where the cartridge slot was. The chip window sits inside the disc, ringed by stepped **concentric rings**.
+- **Gold italic lettering** with only our own names (YM2612, 6-CH FM). The product is simply called **YM2612** (Joey, Oct 24).
+- **Red accents:** volume slider, power LED, Play button, and the data knob's pointer.
+- **Front-left phones jack and volume slider,** where the first model had them.
+- A **ribbed strip** along the front edge, after the original's vent ribs.
+- The LCD, data knob, and pill-shaped buttons sit to the right of the disc. USB-C and the two balanced outs are on the back.
+
+## 3. The chip: YM2612 at a glance
+
+| Fact | What Rev A does about it |
+| --- | --- |
+| 6 FM channels with 4 operators each; channel 6 can play 8-bit samples (DAC) | Firmware plays all of it, including drum and voice samples |
+| Two register banks, selected with address lines A0 and A1 | 2 GPIO lines |
+| 24-pin DIP, 5V, NMOS | DIP socket; 3.3V → 5V buffers between the Pico and the chip |
+| Clock about 7.67 MHz (NTSC Genesis) | Generated by the Pico, no oscillator part needed (§5.3) |
+| Registers are write-only; the status byte can be read | Rev A never reads it. /RD is tied high, so the bus is one-way |
+| Needs a short wait after each write | Fixed minimum gap, measured on a logic analyzer in M1 |
+| Analog outputs MOL / MOR | Low-noise filter stage, then headphone and balanced drivers (§5.5) |
+
+## 4. How it works
+
+### 4.1 Audio pipeline
 
 ```mermaid
 flowchart LR
-    SD[(microSD card<br/>VGM / VGZ files)]
+    PC[Computer<br/>drag and drop]
 
-    subgraph MCU["Microcontroller (RP2350)"]
-        PARSE[VGM parser<br/>unzips VGZ]
-        PCM[(PCM sample bank<br/>in RAM)]
+    subgraph PICO["Pimoroni Pico Plus 2 (RP2350)"]
+        USB[USB drive<br/>over USB-C]
+        FLASH[(16 MB flash<br/>VGM / VGZ files)]
+        PARSE[VGM parser]
+        PCM[(Sample data<br/>in PSRAM)]
         SCHED[Write scheduler<br/>44.1 kHz timeline]
-        MOD[Synth layer<br/>knob offsets,<br/>mute / solo]
-        SHADOW[(Shadow registers<br/>file values + sent values)]
-        DRV[YM2612 driver<br/>bus timing via PIO]
+        DRV[YM2612 driver<br/>PIO bus writes]
+        CLKGEN[Clock output<br/>7.67 MHz]
+        UI[Display, buttons,<br/>data knob]
+        SYN[Edit engine<br/>all sound settings]
     end
 
-    subgraph Panel["Front panel"]
-        CTRL[Synth knobs, encoder,<br/>buttons]
-        SCREEN[Screen]
-        GRID[Register light grid]
-        BUSLED[Bus + key-on LEDs]
-    end
+    BUF[74HCT buffers<br/>3.3V to 5V]
+    YM{{YM2612}}
+    FILT[Model 1-style filter<br/>OPA2350]
+    AMP[NJM4556A<br/>headphone driver]
+    JACK((3.5 mm<br/>headphones))
+    BAL[Balanced driver<br/>OPA2350]
+    TRS((2x 1/4 in TRS<br/>balanced L / R))
+    LCD[20x4 blue<br/>character LCD]
+    BTN[Data knob +<br/>7 buttons]
+    MIDI[USB MIDI<br/>keyboard / DAW]
 
-    subgraph Chip["Chip board"]
-        BUF[Level shifters]
-        YM{{YM2612}}
-        OSC[7.67 MHz oscillator]
-        AOUT[Output stage<br/>buffer + filter]
-    end
-
-    OUT((3.5 mm<br/>line / headphone))
-
-    SD --> PARSE
+    PC --> USB --> FLASH --> PARSE
     PARSE -- "sample data" --> PCM
     PARSE -- "timed writes" --> SCHED
     PCM -- "DAC bytes" --> SCHED
-    SCHED --> MOD
-    CTRL -- "knob turns" --> MOD
-    CTRL -- "play, seek, next" --> SCHED
-    MOD <--> SHADOW
-    MOD --> DRV --> BUF --> YM
-    OSC --> YM
-    YM -- "analog L/R" --> AOUT --> OUT
-    SHADOW --> GRID
-    SHADOW --> SCREEN
-    DRV --> BUSLED
+    SCHED --> SYN --> DRV --> BUF --> YM
+    UI -- "edits" --> SYN
+    CLKGEN --> BUF
+    YM -- "analog L/R" --> FILT
+    FILT --> AMP --> JACK
+    FILT --> BAL --> TRS
+    BTN --> UI
+    UI --> LCD
+    UI -- "start, stop" --> SCHED
+    MIDI -- "notes (MIDI mode)" --> SYN
 ```
 
-In plain words: the microcontroller reads a VGM file, which is a list of "write
-this value to this register, then wait this long". It plays those writes at the
-right moments, lets your tweaks change them on the way through, remembers every
-value it sent, and lights up the panel to match. The YM2612 makes the actual sound.
+In plain words: the Pico reads a VGM file from its own flash memory, where you copied it over USB. The file is a list of "write
+this value to this chip setting, then wait this long". One of the Pico's two cores
+plays those writes to the YM2612 at the right moments. The other core runs the display
+and buttons. The YM2612 makes the sound, and the op-amps clean it up and drive
+the headphone jack and the balanced outputs.
 
-### 3.2 Firmware modules
+### 4.2 Firmware modules
 
 | Module | Job |
 | --- | --- |
-| **Storage** | FAT32 microSD (FatFs). Scans folders and builds a track list. |
-| **VGM parser** | Reads the header (clock, length, loop point, title tags) and turns commands into `(wait, port, register, value)` events. Handles YM2612 writes, waits, PCM data blocks, DAC writes, and the DAC stream commands. PSG writes are skipped (see §2). |
-| **PCM bank** | Holds the song's sample data in RAM so drum and voice samples can be fed to the DAC at full speed. Some VGMs carry several hundred KB of samples, so the board should have PSRAM. |
-| **Scheduler** | Runs on core 1. Releases each write at its exact sample time and handles play, pause, stop, loop, A-B repeat. |
-| **Synth layer** | Applies each knob's offset to its assigned channel, plus mutes, to each write before it reaches the chip (§5). |
-| **Shadow registers** | Two copies of all ~320 registers: what the file last wrote, and what was actually sent. Drives seeking, bypass, and the lights. |
-| **YM2612 driver** | Pin-level bus writes via PIO: set A1/A0, put data on D0–D7, pulse /WR, then wait for the busy bit to clear. Also reset (/IC) and silence. |
-| **UI** | Runs on core 0: screen, controls, LED grid, bus LEDs. Never blocks a chip write. |
+| **Storage** | A FAT filesystem in the board's flash (about 14 MB free after the firmware), read with FatFs. Builds the track list. |
+| **USB** | TinyUSB composite device: a mass-storage drive labelled YM2612 plus a USB MIDI device called YM2612. While the computer has the drive mounted, VGM playback is off; after eject, the player rescans the files. MIDI works either way. |
+| **MIDI mode** | Voice allocator for 6 notes, note/velocity/pitch-bend/sustain handling, and an instrument library (presets, `.tfi` files, and instruments extracted from VGM files by watching which register sets each song writes). Writes go through the same YM2612 driver. |
+| **VGM parser** | Reads the header (clock, length, loop point) and GD3 tags (title, game). Turns commands into timed writes: YM2612 port 0/1 writes, waits, PCM data blocks, DAC writes, and DAC stream commands. Skips PSG writes. VGZ files are unzipped while loading, which matters more now since storage is limited. |
+| **Sample data** | Loads the song's PCM samples into the board's 8 MB PSRAM, so even sample-heavy tracks fit. |
+| **Scheduler** | Runs on core 1. Releases each write at its exact sample time (1/44,100 s). Stops at the end, or after the loop has played twice. |
+| **YM2612 driver** | PIO program: put A1/A0 and D0–D7 on the pins, pulse /WR, wait the minimum gap. Also pulses /IC (reset) at power-up and on Stop to silence the chip. |
+| **Edit engine** | Keeps every sound parameter per channel. In VGM mode it holds edited parameters at your value (and applies Quick Edit as offsets) on every write; in MIDI mode it edits the current instrument. Saves instruments as `.tfi` and song edits as `.edt`. Clamps settings that would be silent or painful. |
+| **UI** | Runs on core 0. Runs the menus: debounces the 7 buttons, reads the data knob (with acceleration), and drives the HD44780 LCD over I²C at 400 kHz, rewriting only characters that changed. Never delays a chip write. |
 
-### 3.3 Seeking
+## 5. Hardware
 
-The chip can't be read back, so to jump to 1:30:
-
-1. Key off all channels and mute the DAC.
-2. Run the file from the start **without writing to the chip**, updating only the shadow registers, up to 1:30.
-3. Write the whole shadow table to the chip in one burst, then re-send the key-on state.
-4. Resume playback.
-
-This takes milliseconds for a typical file. Fast-forward, rewind, loop, and A-B repeat all reuse it.
-
-### 3.4 Timing budget
-
-- Scheduler resolution: 1/44,100 s (about 22.7 µs), same as VGM.
-- Sample-heavy tracks write the DAC thousands of times per second, so DAC writes get priority and the bus is driven by PIO, not by the CPU.
-- Minimum gap between writes: measured on a logic analyzer against the busy bit during M1, then fixed in the driver.
-
-## 4. The lights
-
-**Proposal:** three groups of lights, all driven by the microcontroller from the
-shadow registers, never wired to the chip's own pins (that keeps the chip safe and
-makes the lights readable instead of a blur).
-
-### 4.1 Register grid (the centerpiece)
-
-A **32 × 8 addressable LED panel** (a common, cheap WS2812 matrix) laid out as a
-map of the chip, so each light *means* something:
+### 5.1 Block diagram
 
 ```
-            CH1         CH2         CH3         CH4         CH5         CH6       GLOBAL
-         op1 2 3 4   op1 2 3 4   op1 2 3 4   op1 2 3 4   op1 2 3 4   op1 2 3 4   ........
-DT/MUL    ■ ■ ■ ■     ■ ■ ■ ■     ...                                            LFO
-TL        ■ ■ ■ ■                                                                 DAC on
-KS/AR     ■ ■ ■ ■                                                                 DAC level
-AM/DR     ■ ■ ■ ■                                                                 CH3 mode
-SR        ■ ■ ■ ■                                                                 key-on 1-6
-SL/RR     ■ ■ ■ ■                                                                 ...
-SSG-EG    ■ ■ ■ ■
-CHANNEL   freq · block · FB/ALG · pan/LFO sens (one cell each)
+Pico USB-C ── VBUS 5V ──────┬─ ferrite + caps ── YM2612, 74HCT buffers
+                           ├─ ferrite + LC filter ── low-noise LDO 4.5V ── op-amps (analog rail)
+                           ├─ Pico's own 3.3V regulator ── Pico
+                           └─ ferrite ── LCD + backlight (5V, digital side)
+
+Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter ─┬─ NJM4556A ── 3.5 mm headphones
+                                                                   └─ OPA2350 inverter ── 2× 1/4" TRS balanced
+     ├── I²C ── level shifter ── 20×4 LCD backpack
+     └── 7 buttons + data knob to GND
 ```
 
-- **Brightness** = the register's current value.
-- **Flash** = the register was just written; it fades over about 100 ms.
-- **Color** = who set it: warm white when the value is the song's own, amber when a knob is bending it.
-- The **selected channel** (§5.1) is outlined, so you can see which columns the knobs affect.
+### 5.2 Parts (Proposal)
 
-### 4.2 Bus blinkenlights
+| Part | Choice | Rough cost |
+| --- | --- | --- |
+| Microcontroller | **Pimoroni Pico Plus 2** (RP2350, 16 MB flash, 8 MB PSRAM, USB-C), Pico-sized, soldered by its castellated edges or on headers | $12–15 |
+| Sound chip | YM2612, pulled from a Model 1 Genesis or bought tested | $5–15 |
+| Chip socket | 24-pin DIP, turned-pin | $0.50 |
+| Level shifting | 2× 74HCT541 (one-way 3.3V → 5V buffers, powered from 5V) | $1 |
+| Filter / buffer | OPA2350 low-noise, rail-to-rail dual op-amp rated for 2.7–5.5V (L and R), with Model 1 filter values | $2 |
+| Headphone driver | NJM4556A dual op-amp, AC-coupled output | $1 |
+| Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
+| Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
+| Audio jacks | 3.5 mm stereo headphone jack (front) + 2× 1/4" TRS panel jacks (rear) | $3–4 |
+| Headphone volume | Dual-gang slide potentiometer with a red cap, before the headphone driver only | $1–2 |
+| Display | HiLetgo HD44780 2004A 20×4 LCD, blue backlight, with I²C backpack (PCF8574 type), 5V | $10–13 |
+| I²C level shifter | 2-channel bidirectional (BSS138 MOSFETs or a PCA9306), 3.3V ↔ 5V | $0.50 |
+| Buttons | 7× 6 mm tactile switches (or 12 mm with caps for a synth feel) | $0.70–3 |
+| Data knob | Rotary encoder, no push switch needed (EC11 type), with a knob cap | $1 |
+| Power and file loading | The Pico board's own USB-C port (no extra connector) | $0 |
+| Chip window light | 2× warm-white 3 mm LEDs with resistors, on 5V, always on | $0.20 |
+| Passives | Decoupling, ferrites, op-amp resistors and caps, output caps | $2 |
+| PCB | 2-layer, about 100 × 70 mm | about $1 each in a batch of 5 |
 
-11 LEDs in a row: D7–D0, A1, A0, /WR. They mirror the last write, held for a few
-milliseconds so they flicker like a 70s front panel instead of staying dimly lit.
+**Rough total: $40–50 per board** before the enclosure, mostly depending on the YM2612's price.
 
-### 4.3 Key-on lights
+### 5.3 Cost savers in this design
 
-7 LEDs: one per channel that lights on each note, plus one for the DAC.
+- **No crystal oscillator for the chip.** The RP2350 runs at 153.33 MHz (12 MHz × 115 ÷ 9),
+  and its clock-output pin divides that by 20 to give **7.667 MHz**, within 0.05% of
+  a real Genesis (less than 1 cent of pitch). The clock goes through a spare 74HCT541
+  channel to reach 5V levels. **Proposal:** add an unpopulated footprint for an oscillator
+  can as a fallback.
+- **No busy-flag reads,** so the buffers only go one way and /RD is tied high.
+- **No memory card, USB connector, regulator, or power switch.** The Pico board's USB-C port loads files and powers everything.
 
-**Power note:** 256 RGB LEDs at full white could draw several amps. Firmware caps
-total LED brightness to stay inside a 5V 3A USB-C budget, and the LEDs get their own
-supply path and ground return so they don't hum into the audio.
+### 5.4 Pin map (Proposal)
 
-## 5. The controls
+Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard Pico header for GP0–GP28. Check each pin against its pinout in KiCad.
 
-**Decision (Joey, Oct 23):** synth controls only, no direct register editing. The
-knobs change the chip's registers behind the scenes, but you work with musical ideas
-like "Timbre" and "Pitch", never raw register numbers.
+| Pico GPIO | Signal | Goes to |
+| --- | --- | --- |
+| GP0–GP7 | D0–D7 | 74HCT541 #1 → YM2612 data bus |
+| GP8 | A0 | 74HCT541 #2 → YM2612 |
+| GP9 | A1 | 74HCT541 #2 → YM2612 |
+| GP10 | /WR | 74HCT541 #2 → YM2612 |
+| GP11 | /IC (reset) | 74HCT541 #2 → YM2612 |
+| GP21 | Clock out (GPOUT0) | 74HCT541 #2 → YM2612 φM |
+| GP14 | LCD SDA (I²C1) | level shifter → LCD backpack |
+| GP15 | LCD SCL (I²C1) | level shifter → LCD backpack |
+| GP12, GP13 | Spare | free for later (for example dimming the window LEDs) |
+| GP16 | Button Play | to GND, internal pull-up |
+| GP17 | Button Stop | to GND, internal pull-up |
+| GP18 | Button ◀ | to GND, internal pull-up |
+| GP19 | Button ▶ | to GND, internal pull-up |
+| GP20 | Button Edit | to GND, internal pull-up |
+| GP22 | Button Exit | to GND, internal pull-up |
+| GP26 | Button Write | to GND, internal pull-up |
+| GP27 | Data knob A | encoder, internal pull-up |
+| GP28 | Data knob B | encoder, internal pull-up |
+| — | /CS tied low, /RD tied high | YM2612 |
 
-### 5.1 Four knobs you point at channels
+### 5.5 Audio output and the −70 dB target
 
-The controls borrow from two easy-to-use 4-operator FM synths of the late 80s:
+**Signal path**
 
-- **Korg DS-8 / 707:** Korg hid FM's operators and algorithms behind analog-style terms.
-  Each sound has a **timbre** (brightness) side and an **amplitude** (volume) side, each
-  with its own envelope. The performance sliders are **relative to the stored sound**, not
-  absolute, and an oscillator select button picks what the sliders act on.
-- **Yamaha TQ5 "Easy Edit":** a handful of musical parameters, each moved about ±10 steps
-  from the original sound.
+- **Authentic sound only (Joey, Oct 24).** The YM2612's own built-in DAC is the same one the
+  console used, so the "Mega Drive DAC" comes for free. After it, the board copies the
+  **first-model console's analog output stage**: the same load resistors on MOL/MOR and the
+  same low-pass filter that softens the top end. There's no "clean" mode and no switch.
+- The filter is built around an **OPA2350** buffer, with the resistor and capacitor values taken
+  from a real Model 1 schematic and checked by measuring an original console's output in M4.
+- No USB audio: like the original hardware, the sound only leaves through the analog jacks.
+- From there, each channel splits two ways:
+  - **Headphones:** an NJM4556A drives the 3.5 mm jack through about 220 µF output capacitors.
+  - **Balanced line out:** the filter output is the *hot* leg, and a second OPA2350 makes an
+    inverted *cold* leg. Both go through 100 Ω resistors and DC-blocking capacitors to a 1/4"
+    TRS jack (tip = hot, ring = cold, sleeve = ground). A 5V board can only swing about 3 V
+    per leg, but balanced doubles that between hot and cold, so the line out reaches about
+    2 V RMS.
 
-On the YM2612 this maps cleanly: the firmware knows each channel's algorithm, so it knows
-which operators are **modulators** (they shape timbre) and which are **carriers** (they
-make the sound you hear). There are just **4 knobs**, each with a fixed job and a small
-**Assign** button with a light:
+**Why balanced:** in the studio, the player is on USB to the PC and its audio goes into an
+audio interface on the same PC. That creates a ground loop, the usual cause of hum and USB
+whine. A balanced input on the interface rejects noise that appears equally on hot and cold,
+so the loop stops mattering.
 
-| Knob | Inspired by | Under the hood | Sound |
-| --- | --- | --- | --- |
-| **Timbre** | DS-8 Timbre slider, TQ5 Brilliance | TL offset on *modulator* operators only | Dull to bright/harsh |
-| **Timbre EG** | DS-8 timbre envelope | Attack and release rates of the *modulators*, together | How fast the brightness opens up and fades away |
-| **Amp EG** | DS-8 envelope sliders, TQ5 Attack/Release | Attack and release rates of the *carriers*, together | Left: snappy, short tails. Right: soft swell, long tails |
-| **Pitch** | DS-8 joystick bend (up to 12 semitones) | Frequency/block offset in semitones (±12) | Pitch down/up |
+**Target:** idle noise floor **at or below −70 dB relative to full-scale output**, 20 Hz–20 kHz,
+measured on the balanced outs into an audio interface with the player on USB to the same PC.
+That level of hiss is easy for these op-amps. The work is keeping digital noise out:
 
-Each knob has **21 positions: −10 to +10**, with 0 at the center detent meaning "the song
-as written", like the TQ5's ±10 Easy Edit and the DS-8's relative sliders. Pitch uses
-±12 semitones instead. Decay and sustain always stay as the song wrote them.
+- **Analog rail:** USB 5V → ferrite → LC filter → low-noise LDO (about 4.5V) for the op-amps
+  only. The 2.25V mid-rail reference gets its own RC filter and a large capacitor.
+- **Grounds:** a solid analog ground area under the audio section, joined to digital ground at
+  one point. USB, the bus, and the clock never cross the analog area.
+- **The chip:** the YM2612's own supply gets its own ferrite and decoupling, and its outputs
+  leave on short traces straight into the analog section.
+- **Spare footprints:** room for an extra filter stage and a ground-lift resistor, in case
+  measurements in M4 call for them.
 
-Left out on purpose: feedback ("buzz"), the TQ5's **Wave** choice (the YM2612 only makes
-sine waves), **vibrato and tremolo** (dropped by Joey), and built-in effects (the YM2612
-has none).
+While music plays, the YM2612's own 9-bit DAC adds its well-known grit. That's the chip's
+character, not noise from the board, and it isn't part of the −70 dB figure.
 
-**Pointing a knob at a channel:** tap the knob's **Assign** button, then tap a channel
-button (1–6). Tap Assign twice to point it at **all channels**. Each knob remembers its
-channel, so different knobs can work on different channels at once, for example
-Timbre on the bass and Pitch on the lead. The register grid outlines each knob's
-channel in that knob's color, so you can see what's pointed where.
+### 5.6 Protecting the chip
 
-### 5.2 How the knobs behave
+- Series resistors (about 100 Ω) on every buffer output into the YM2612.
+- The YM2612 is socketed and only gets 5V through a ferrite and decoupling right at its pins.
+- Keep a spare YM2612 on hand. Buy from a seller with returns, since pulled and fake chips are common.
+- **Sourcing plan (open):** real YM2612s come from used Model 1 Genesis consoles or resellers. Test every chip on the M1 breadboard rig before it goes in a box.
 
-- Every knob is centered on **"the song as written"**. Turning it bends the sound from there, and the song keeps playing its own changes underneath.
-- Knobs are potentiometers with a **center detent**, so the "as written" position is easy to feel.
-- When a knob is re-assigned, the old channel goes back to the song's own sound.
-- **Bypass** button: hear the untouched song while held, to compare.
-- Settings that would produce silence or a painful sound are clamped by the firmware, and the output stage has a limiter.
-- Songs that use the chip's own vibrato or tremolo still play it as written.
+### 5.7 Chip window light
 
-### 5.3 Buttons and encoder
+Two warm-white 3 mm LEDs on the board, angled across the top of the socketed YM2612 so the
+chip's markings catch the light through the panel window (a black package won't glow from
+behind). They run from 5V through resistors, always on, at about 5 mA each, on the digital
+side of the board. Joey's enclosure provides the window. Brighter or music-reactive lighting
+is parked for later revisions.
 
-- **Encoder + screen:** browse folders and tracks; on the now-playing screen, turning it sets volume.
-- **Transport:** previous, rewind, play/pause, stop, fast-forward, next.
-- **Channel buttons 1–6 + DAC:** tap to mute, hold to solo, or pick a channel right after pressing a knob's Assign. Each sits under its channel's column on the grid.
-- **Assign** (one per knob) and **Bypass** (§5.1–5.2).
-- **Loop / A-B:** loop one section while you play with the knobs.
+### 5.8 Why a Raspberry Pi Pico
 
-### 5.4 Later: expert mode
+- **PIO:** the RP2350's PIO state machines make the chip's clock and drive the bus and write strobes with exact timing, without using CPU time.
+- **Enough GPIO** for the chip bus, display, data knob, and buttons; low cost, so one per box is practical.
+- **Language:** C/C++ with the Pico SDK for the timing-critical parts.
+- **Runner-up:** Teensy 4.1 (faster, built-in SD slot, costs more).
+- **Rejected:** a full Raspberry Pi running Linux (no guaranteed real-time timing, slow to boot); STM32 (capable, but more toolchain effort for the same result).
 
-Direct register editing (the "POKE a value" idea from the original notes) is left out of the
-proof of concept. It can come back later as a hidden expert mode on the same hardware,
-since the firmware already keeps every register in its shadow table.
+## 6. KiCad notes for Joey's "YM2612 player" project
 
-## 6. Hardware for the proof of concept
+- Symbols you may need to make: YM2612 (DIP-24). The LCD connects through a 4-pin header (5V, GND, SDA, SCL) to its I²C backpack.
+- The backpack's I²C address is usually **0x27**, sometimes **0x3F**; firmware scans for it.
+- The backlight draws real current (tens of mA), so feed the LCD from the 5V rail, not the Pico's 3.3V. The backpack's jumper can cut the backlight if needed.
+  The Pico Plus 2 uses the standard Pico footprint (Raspberry Pi's official KiCad footprint works).
+- Put the YM2612, buffers, and op-amps on the 5V side of the board, and the display connector on the 3.3V side. Keep the LCD cable and its backlight current away from the audio corner.
+- Keep the 7.67 MHz clock trace short, and away from the audio traces.
+- Place the headphone jack and volume slider on the front-left edge, and both 1/4" TRS jacks and the Pico board's USB-C port on the rear edge, so the case can expose them.
+- Keep the analog section (op-amps, LDO, jacks) in one corner, away from the Pico, bus, and clock.
+- Add test points for D0–D7, A0, A1, /WR, and the clock for the logic analyzer in M1.
 
-```
-USB-C 5V ─┬─ ferrite ─ 3.3V ── RP2350 board, screen, SD
-          ├─ ferrite ─ LDO 5V (analog) ── YM2612 + output stage
-          └─ separate path ── LED grid + bus LEDs (brightness-capped)
-
-RP2350 ── PIO bus ── level shifters ── YM2612 (socketed) ── op-amp buffer/filter ── 3.5 mm
-```
-
-| Part | Proposal |
-| --- | --- |
-| Microcontroller | RP2350 board with PSRAM (for example Pimoroni Pico Plus 2). Two cores, PIO for exact bus timing, room for big sample banks. |
-| Chip socket | 24-pin ZIF or turned-pin socket, centered under the window |
-| Clock | 7.67 MHz crystal oscillator can |
-| Level shifting | 74HCT-series buffers for 3.3V → 5V writes; a 5V-tolerant buffer or divider for reading the busy bit. Confirm thresholds against the datasheet. |
-| Audio out | Op-amp buffer and low-pass filter on MOL/MOR, based on a known-good Genesis model 1 output stage; 3.5 mm line out plus a headphone amp; volume through a digitally controlled potentiometer set from the encoder |
-| Screen | 2.0"–2.8" color IPS (SPI) |
-| Lights | 32×8 WS2812 panel, 11 + 7 discrete LEDs |
-| Controls | 4 center-detent potentiometers, 1 clickable encoder, about 21 buttons (4 with indicator LEDs) |
-| Power | USB-C with 5.1 kΩ resistors on CC for 5V; needs a 3A-capable supply because of the LEDs |
-| Storage | microSD slot, reachable from outside the case |
-| Build | Protoboard or a carrier board for the RP2350 and chip; the PCB comes later |
-
-**Protecting the chip:** series resistors on every bus line, no user-reachable pins,
-reverse-polarity protection on the input. Keep a spare YM2612 on hand.
-
-**Sourcing:** YM2612s are pulled from old consoles and are widely counterfeited. Buy
-from a seller with returns, and test each one on the breadboard rig (M1) before it goes
-in the box. A YM3438 (the later CMOS version) sounds cleaner and lacks the gritty DAC;
-note which one you have.
-
-## 7. Enclosure (Joey designs and prints)
-
-What the case needs to hold and expose:
-
-- **Chip window:** the YM2612 visible under a clear window with warm edge lighting raking across the top so the markings glow.
-- **Register grid:** 32×8 panel behind a diffuser, ideally with a printed light-blocking grid so each cell reads as its own square. Column and row labels printed or engraved on the panel (§4.1).
-- **Bus and key-on LED rows** near the grid.
-- **Screen**, **encoder**, **4 synth knobs, each with an Assign button**, **~18 buttons**, with the 7 channel buttons lined up under the grid's channel columns.
-- **Rear or side:** USB-C, 3.5 mm line out, headphone jack + volume, microSD slot.
-- **Inside:** standoffs for the RP2350 board and the chip/audio board; keep the audio board away from the LED panel's power wiring.
-- **Style ideas from the notes:** beige or black finish, period font, the YM2612 pinout printed beside the window.
-
-Exact dimensions get filled in once the screen, LED panel, knobs, and buttons are bought (M5).
-
-## 8. Milestones
-
-Each one ends with something you can hear or see.
+## 7. Milestones
 
 | # | Milestone | Done when |
 | --- | --- | --- |
-| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), RP2350 board, oscillator, level shifters, op-amp parts |
-| M1 | **First sound** | Breadboard plays a hard-coded FM note; write timing measured on a logic analyzer |
-| M2 | **Play a VGM** | A Genesis VGM plays start to finish from microSD, samples included |
-| M3 | **Transport + screen** | Track list, play/pause/stop/next/prev, title and time on screen |
-| M4 | **Shadow registers + seek** | Seek, FF/REW, loop, A-B repeat without glitches |
-| M5 | **Lights** | Register grid, bus LEDs, and key-on LEDs working; parts measured for the enclosure |
-| M6 | **Synth controls** | 4 assignable knobs, bypass, mute/solo |
-| M7 | **Clean power + audio** | USB-C only, LED brightness cap, no audible hum or LED noise |
-| M8 | **In the box** | Everything mounted in Joey's 3D-printed enclosure |
+| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), Pico Plus 2, buffers, op-amps, display |
+| M1 | **First sound** | Breadboard: the Pico clocks the YM2612 and plays a hard-coded FM note; write gap measured |
+| M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included; VGM exports from Furnace and DefleMask play correctly |
+| M3 | **Screen + panel** | 20×4 LCD home screen with file name and time; data knob, ◀ ▶, Play, Stop working |
+| M3a | **Menus + editing** | Every menu page works; edits are heard live on a playing song and in MIDI mode; Write saves `.edt` and `.tfi` files |
+| M3b | **MIDI mode** | A USB keyboard or DAW plays 6-note chords on the YM2612 using built-in and borrowed instruments |
+| M4 | **Authentic, quiet audio** | Filter matches the Model 1 output stage (A/B against a real console); idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
+| M5 | **Schematic + PCB** | Joey's KiCad project matches this doc; boards ordered |
+| M6 | **Rev A built** | Assembled board loads files over USB-C and plays them in a simple case |
 
-## 9. Later versions (out of scope now)
+## 8. Open questions
 
-- Other chips (SN76489, AY-3-8910, OPL2, POKEY, SID, SCC) and a swappable chip-module design.
-- A real SN76489 so Genesis PSG parts play too.
-- Custom PCB.
-- USB drag-and-drop file loading.
-- Expert mode for direct register editing (§5.4), serial PEEK/POKE monitor, expansion header, USB keyboard input.
-- Isolated audio output for ground-loop-free use with a computer and an amp.
+- [x] **Headphone volume:** a front slide pot on the headphone output only, part of the console homage (Oct 24). The balanced outs stay at a fixed line level.
+- [x] **Display:** HiLetgo 20×4 blue character LCD on I²C, from the Chip Box spec (Joey, Oct 24). USB-C loading and USB MIDI stay.
+- [ ] **Buttons:** small 6 mm tactile switches, or larger synth-style buttons with caps?
+- [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
+- [x] **File loading:** over USB-C into the board's flash, no microSD (Joey, Oct 24).
+- [ ] **VGZ:** proposed as required in Rev A, since zipped files stretch the 16 MB of storage.
 
-## 10. Open questions
+## 9. Glossary
 
-- [ ] Register grid as proposed (32×8 LED panel), or something different?
-- [ ] Headphone amp, or line out only?
-
-## 11. Glossary
-
+- **VGM / VGZ:** "Video Game Music", a recording of every chip write a game made, with timing. VGZ is the zipped version.
+- **GD3 tag:** the part of a VGM file that holds the track title, game, and composer.
 - **Register:** a tiny memory slot in the chip; writing a number to it changes pitch, volume, or tone.
-- **Operator:** one of the 4 sine-wave generators inside each FM channel. *Carriers* are heard; *modulators* bend the carriers' tone.
-- **Algorithm:** how a channel's 4 operators are wired together (8 options).
-- **VGM / VGZ:** "Video Game Music", a recording of every register write a game made, with timing. VGZ is the zipped version.
-- **Shadow register:** the player's own copy of a register's value, because the chip can't be read back.
 - **PIO:** programmable I/O blocks on the RP2350 that toggle pins with exact timing.
 - **DAC:** the YM2612's sample-playback mode on channel 6, used for drums and voices.
-- **PSG:** the Genesis's second, simpler sound chip (SN76489-style).
+- **PSG:** the Genesis's second, simpler sound chip. Rev A doesn't play its parts.
+- **Level shifting:** converting the Pico's 3.3V signals to the 5V the YM2612 expects.
