@@ -460,7 +460,7 @@ is parked for later revisions.
 | M3 | **Screen + panel** | 20×4 LCD home screen with file name and time; data knob, ◀ ▶, Play, Stop working |
 | M3a | **Menus + editing** | Every menu page works; edits are heard live on a playing song and in MIDI mode; Write saves `.edt` and `.tfi` files |
 | M3b | **MIDI mode** | A USB keyboard or DAW plays 6-note chords on the YM2612 using built-in and borrowed instruments |
-| M4 | **Authentic, quiet audio** | Filter matches the Model 1 output stage (A/B against a real console);  Idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
+| M4 | **Authentic, quiet audio** | Filter matches the Model 1 output stage (A/B against a real console); idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
 | M5 | **Schematic + PCB** | Joey's KiCad project matches this doc; boards ordered |
 | M6 | **Rev A built** | Assembled board loads files over USB-C and plays them in a simple case |
 
