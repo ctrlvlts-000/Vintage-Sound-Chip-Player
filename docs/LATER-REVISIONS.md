@@ -13,6 +13,7 @@ Section numbers in this file are its own.
 - **Fuller transport:** pause, next/previous, seek, loop, A-B repeat (§4)
 - **Fuller hardware:** Pico Plus 2 with PSRAM, LED power budget, USB-C (§5)
 - **Lit chip window and enclosure styling** (§6)
+- **More MIDI:** a 3.5 mm TRS or 5-pin DIN MIDI in jack, MIDI CC control of the knobs, MIDI out
 - Later still: direct register editing (expert mode), a real SN76489 for Genesis PSG parts, USB drag-and-drop, other chips
 
 ## 2. The lights

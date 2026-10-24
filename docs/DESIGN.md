@@ -1,6 +1,6 @@
 # Chip Shrine: YM2612 Player — Rev A Design
 
-Status: Draft v0.5 · Oct 24, 2026 · Owner: Joey
+Status: Draft v0.6 · Oct 24, 2026 · Owner: Joey
 
 > A small box with a real Sega Genesis sound chip, the Yamaha YM2612. Put VGM files
 > onto it over USB-C like a thumb drive, pick a song with the buttons, and hear the
@@ -25,6 +25,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 3. **One 3.5 mm stereo jack** that drives headphones and also works as a line out.
 4. **A display** that shows the file being played.
 5. **Four buttons:** Up, Down, Start, Stop.
+6. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from a keyboard or computer (§2.2). Costs no extra parts.
 
 **Not in Rev A**
 
@@ -32,9 +33,15 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 - Pause, next/previous, seek, loop, A-B repeat.
 - Volume control (see Open questions, §8).
 - Genesis PSG parts: only the YM2612 plays (decided Oct 23).
-- Other chips, battery, wireless, MIDI.
+- DIN or TRS MIDI jacks (USB MIDI only), MIDI out, MIDI control of knobs.
+- Other chips, battery, wireless.
 
 ## 2. How you use it
+
+The player has two modes. The top entry of the track list is **MIDI MODE**: select it with Start
+to switch to MIDI mode, and press Stop to go back to VGM mode.
+
+### 2.1 VGM mode
 
 1. To add songs, plug the player into a computer with a USB-C cable, drag files onto the **CHIPSHRINE** drive, then eject it.
    The player rescans its files after you eject.
@@ -45,7 +52,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 6. When a track ends, the player stops. If the file has a loop point, the looped part plays
    **twice**, then the player stops.
 
-### Display (128 × 64 OLED)
+#### Display (128 × 64 OLED)
 
 ```
 ┌────────────────────────┐
@@ -57,6 +64,42 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 ```
 
 When stopped, the screen shows a scrolling list of tracks with the selected one highlighted.
+
+### 2.2 MIDI mode
+
+1. Connect the player to a computer (DAW or MIDI software). It shows up as a MIDI device called
+   **Chip Shrine**, alongside the USB drive. Most keyboards with USB are themselves devices, not hosts,
+   so playing straight from a keyboard needs a computer or a small USB MIDI host box in between.
+2. Notes on **MIDI channel 1** play the YM2612 with **6-note polyphony** (one note per FM
+   channel; when a 7th note arrives, the oldest note is stolen).
+3. **Up / Down** pick the instrument. **Start** previews it with a test note. **Stop** returns to VGM mode.
+
+**Where the instruments come from** (no menus needed):
+
+- **Built-in presets:** a small bank of classic Genesis-style sounds stored with the firmware.
+- **Borrowed from songs:** the player scans the VGM files on the drive and lists every
+  distinct instrument it finds, named by song and channel, for example *Green Hill Zone · ch 2*.
+- **Instrument files:** `.tfi` files (a common 42-byte YM2612 instrument format) dragged onto the drive show up too.
+
+**What MIDI controls in Rev A:**
+
+| MIDI message | Effect |
+| --- | --- |
+| Note on / off | Plays and releases notes |
+| Velocity | Note loudness (carrier operator levels) |
+| Pitch bend | ±2 semitones |
+| Sustain pedal (CC 64) | Holds notes |
+| Program change | Picks the instrument, same as Up/Down |
+| All notes off (CC 123) | Silences the chip |
+
+```
+┌────────────────────────┐
+│ MIDI  ch1      ♪ 3/6   │   mode, MIDI channel, notes sounding
+│ Green Hill Zone · ch2  │   current instrument
+│ 014 / 120              │   instrument number / total
+│ ■ ■ ■ □ □ □            │   which of the 6 voices are playing
+└────────────────────────┘
+```
 
 ## 3. The chip: YM2612 at a glance
 
@@ -95,6 +138,7 @@ flowchart LR
     JACK((3.5 mm jack))
     OLED[128x64 OLED]
     BTN[Up / Down /<br/>Start / Stop]
+    MIDI[USB MIDI<br/>keyboard / DAW]
 
     PC --> USB --> FLASH --> PARSE
     PARSE -- "sample data" --> PCM
@@ -106,6 +150,7 @@ flowchart LR
     BTN --> UI
     UI --> OLED
     UI -- "start, stop" --> SCHED
+    MIDI -- "notes (MIDI mode)" --> DRV
 ```
 
 In plain words: the Pico reads a VGM file from its own flash memory, where you copied it over USB. The file is a list of "write
@@ -119,12 +164,13 @@ headphones.
 | Module | Job |
 | --- | --- |
 | **Storage** | A FAT filesystem in the board's flash (about 14 MB free after the firmware), read with FatFs. Builds the track list. |
-| **USB drive** | TinyUSB mass-storage device, so a computer sees the flash as a drive called CHIPSHRINE. While the computer has it mounted, playback is off; after eject, the player rescans the files. |
+| **USB** | TinyUSB composite device: a mass-storage drive called CHIPSHRINE plus a USB MIDI device called Chip Shrine. While the computer has the drive mounted, VGM playback is off; after eject, the player rescans the files. MIDI works either way. |
+| **MIDI mode** | Voice allocator for 6 notes, note/velocity/pitch-bend/sustain handling, and an instrument library (presets, `.tfi` files, and instruments extracted from VGM files by watching which register sets each song writes). Writes go through the same YM2612 driver. |
 | **VGM parser** | Reads the header (clock, length, loop point) and GD3 tags (title, game). Turns commands into timed writes: YM2612 port 0/1 writes, waits, PCM data blocks, DAC writes, and DAC stream commands. Skips PSG writes. VGZ files are unzipped while loading, which matters more now since storage is limited. |
 | **Sample data** | Loads the song's PCM samples into the board's 8 MB PSRAM, so even sample-heavy tracks fit. |
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time (1/44,100 s). Stops at the end, or after the loop has played twice. |
 | **YM2612 driver** | PIO program: put A1/A0 and D0–D7 on the pins, pulse /WR, wait the minimum gap. Also pulses /IC (reset) at power-up and on Stop to silence the chip. |
-| **UI** | Runs on core 0. Debounces the 4 buttons and draws the OLED. Never delays a chip write. |
+| **UI** | Runs on core 0. Debounces the 4 buttons, switches between VGM and MIDI mode, and draws the OLED. Never delays a chip write. |
 
 ## 5. Hardware
 
@@ -221,6 +267,7 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
 | M1 | **First sound** | Breadboard: the Pico clocks the YM2612 and plays a hard-coded FM note; write gap measured |
 | M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included |
 | M3 | **Display + buttons** | Track list, Up/Down/Start/Stop, title and time on the OLED |
+| M3b | **MIDI mode** | A USB keyboard or DAW plays 6-note chords on the YM2612 using built-in and borrowed instruments |
 | M4 | **Clean audio** | Headphones and line out sound clean with no hum or whine |
 | M5 | **Schematic + PCB** | Joey's KiCad project matches this doc; boards ordered |
 | M6 | **Rev A built** | Assembled board loads files over USB-C and plays them in a simple case |
