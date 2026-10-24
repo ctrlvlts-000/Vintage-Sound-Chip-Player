@@ -6,6 +6,10 @@ Status: Draft v1.0 · Oct 24, 2026 · Owner: Joey
 > onto it over USB-C like a thumb drive, pick a song with the buttons, and hear the
 > real chip play it through headphones or balanced outputs into your studio.
 
+**Who it's for:** retro computer enthusiasts and synth heads, roughly 40–60, who want to hear
+and play with the real silicon from their childhood. Real vintage chips only, no emulation.
+The YM2612 is the first of a planned series of classic chiptune chips.
+
 **Rev A is the simplest, lowest-cost version that plays music.** It does VGM import and
 playback and nothing else. The lights, synth knobs, fuller transport, and lit window
 designed earlier are parked in [LATER-REVISIONS.md](LATER-REVISIONS.md) for Rev B and on.
@@ -23,14 +27,15 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 1. **VGM import over USB-C:** plug the player into a computer and it shows up as a USB drive. Drag `.vgm` and `.vgz` files onto it. No memory card.
 2. **Playback** on a real YM2612.
 3. **Audio outputs:** a 3.5 mm headphone jack, plus **two balanced 1/4" TRS line outs** (L and R) for an audio interface. Target: **noise floor at or below −70 dB** (§5.5).
-4. **A small green-screen display:** a cheap 1.9" 320 × 170 color LCD drawn like a tiny vintage green terminal. It always shows the VGM file that's playing, plus the name of whatever you're editing (§2.1).
+4. **A 90s character LCD:** a 20 × 4 blue LCD (white characters on blue). It always shows the VGM file that's playing, plus the name of whatever you're editing (§2.1).
 5. **A late-80s digital synth front panel:** one data knob and 7 buttons (Play, Stop, ◀, ▶, Edit, Exit, Write) driving simple menus for every function (§2.2–2.4).
 6. **Full sound editing:** every YM2612 sound parameter, plus Korg DS-8 style quick controls, reachable from the menus (§2.4).
-7. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from Ableton or any DAW (§2.5). Costs no extra parts.
+7. **Lit chip window:** the YM2612 sits under a window in the panel, lit by two warm-white LEDs (§5.7).
+8. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from Ableton or any DAW (§2.5). Costs no extra parts.
 
 **Not in Rev A**
 
-- Lights, the 4-knob panel, lit chip window (see [LATER-REVISIONS.md](LATER-REVISIONS.md)).
+- Register lights, the 4-knob panel, fancier window lighting (see [LATER-REVISIONS.md](LATER-REVISIONS.md)).
 - Seek, loop, A-B repeat.
 - Volume control (see Open questions, §8).
 - Genesis PSG parts: only the YM2612 plays (decided Oct 23).
@@ -43,48 +48,39 @@ The panel works like a late-80s / early-90s digital synth (think Korg M1, Roland
 DX7): **one data knob, a few buttons, and a small screen with simple menus**. Nothing is
 buried more than one level deep, and the screen always says what you're editing.
 
-### 2.1 The screen: a tiny green terminal
+### 2.1 The screen: a 90s blue character LCD
 
-**Decision (Joey, Oct 24):** a
-**1.9" 320 × 170 IPS color TFT** with an ST7789 controller, SPI, about $5. It's a wide strip
-(about 43 × 23 mm active area), close to the shape of a vintage synth's LCD. Because it's a
-color screen, the firmware draws the green terminal itself on a black background:
+**Decision (Joey, Oct 24):** a **20 × 4 character LCD, white characters on blue** (STN
+negative, blue backlight): the **HiLetgo HD44780 2004A** with an I²C backpack (PCF8574 type).
+Character LCD only, no graphic, OLED, or TFT displays, even vintage-looking ones.
 
-- A chunky **VT220-style bitmap font** (8 lines × 40 characters, or 5 lines × 26 in the large font).
-- **Phosphor green** text, with **amber** and **plain white** styles in the System menu.
-- **Scanlines:** every other pixel row drawn slightly dimmer, like a CRT.
-- **Phosphor glow:** a faint halo around lit characters and a short fade when text changes.
-- **Inverse-video** highlight for the selected item and a **blinking block cursor**.
-- A **boot screen** that types out `CHIP SHRINE  YM2612 OK` like an old computer.
+- **Text only:** 4 lines of 20 characters, plus 8 custom characters, used for level bars, ▶ / ■, and a ♪.
+- **Paging:** 20 columns means each page shows one or two parameters with their full names, and ◀ / ▶ step through the rest.
+- **Contrast** is set once with the trimpot on the backpack.
 
-The one trade-off against OLED: an LCD's black is lit from behind, so in a dark room the
-background is very dark grey rather than true black. The firmware keeps the backlight at a
-moderate level to help.
-
-Alternatives, if this one doesn't suit: a **2.0" 320 × 240** ST7789 (same wiring, taller and
-less synth-like), or a **20 × 4 character LCD** with a yellow-green backlight (the authentic
-DX7/M1 look, but dark text on green, with no terminal effects).
+Alternatives considered and not chosen: 16 × 2 (too small for editing), 40 × 4 (harder wiring),
+128 × 64 ST7920 graphic (not a pure character LCD).
 
 **Home screen (VGM mode)** — the playing file is always on the top line:
 
 ```
-┌──────────────────────────────────────────┐
-│ GHZ.VGM                      VGM  ▶ 01:24 │  file name, mode, play state, time
-│ Green Hill Zone                    03/27 │  title from the GD3 tag, track number
-│ Sonic the Hedgehog                       │  game
-│ CH1▮▮▮ CH2▮▮ CH3▮▮▮▮ CH4▮ CH5▮▮ CH6/DAC▮▮ │  channel activity
-└──────────────────────────────────────────┘
+┌────────────────────┐
+│GHZ.VGM     ▶ 01:24│  file name, play state, time
+│Green Hill Zone     │  title from the GD3 tag
+│Sonic the Hedgehog  │  game
+│03/27 ▮▮▮▮▮▮▮▮▮ VGM │  track number, 6 channels + DAC activity bars, mode
+└────────────────────┘
 ```
 
 **Edit page** — the file stays on top, the parameter name is spelled out:
 
 ```
-┌──────────────────────────────────────────┐
-│ GHZ.VGM                      VGM  ▶ 01:24 │
-│ OPERATOR   CH2                           │  page, channel
-│      OP1   OP2   OP3   OP4               │
-│ ATTACK RATE  31  [18]   31    28         │  cursor on OP2; knob changes it
-└──────────────────────────────────────────┘
+┌────────────────────┐
+│GHZ.VGM     ▶ 01:24│
+│OPERATOR CH2        │  page and channel
+│ATTACK RATE         │  parameter name
+│ 31 [18] 31  28     │  OP1–OP4, cursor on OP2; knob changes it
+└────────────────────┘
 ```
 
 ### 2.2 Controls
@@ -115,7 +111,7 @@ MAIN MENU
  4 LFO           On/off, Speed (all channels)
  5 MODE          VGM player  /  MIDI synth
  6 INSTRUMENT    Load, Init, Rename  (Write saves)
- 7 SYSTEM        MIDI channel, Screen style, Scanlines, Brightness, Loop count, Firmware info
+ 7 SYSTEM        MIDI channel, Backlight on/off, Loop count, Firmware info
 ```
 
 Every page shows the **channel** being edited (CH1–CH6 or ALL). On the Quick Edit page,
@@ -184,12 +180,12 @@ That covers every sound setting the YM2612 has.
 | All notes off (CC 123) | Silences the chip |
 
 ```
-┌──────────────────────────────────────────┐
-│ MIDI SYNTH                    CH1   ♪ 3/6 │  mode, MIDI channel, notes sounding
-│ 014/120  Green Hill Zone · ch2           │  instrument number and name
-│ ALG 4  FB 5                               │  quick look at the patch
-│ V1▮ V2▮ V3▮ V4  V5  V6                    │  which of the 6 voices are playing
-└──────────────────────────────────────────┘
+┌────────────────────┐
+│MIDI SYNTH  CH1  3/6│  mode, MIDI channel, notes sounding
+│014 Green Hill Zone │  instrument number and name
+│ ch2  ALG4 FB5      │  where it came from, quick look at the patch
+│▮▮▮   voices        │  which of the 6 voices are playing
+└────────────────────┘
 ```
 
 ### 2.6 Adding songs
@@ -197,6 +193,19 @@ That covers every sound setting the YM2612 has.
 Plug the player into a computer with USB-C, drag `.vgm` / `.vgz` files onto the **CHIPSHRINE**
 drive, then eject it. The player rescans its files after you eject. Playback is paused while
 the computer has the drive mounted; MIDI works either way.
+
+### 2.7 Making your own music for it
+
+Any tool that exports **VGM for the YM2612** (Genesis / Mega Drive) can make files for the
+player. Known options (each one's VGM export gets tested on the player in M2 before it's
+promised to users):
+
+| Tool | What it is | Notes |
+| --- | --- | --- |
+| **Furnace Tracker** | Free, open-source tracker | YM2612 support, FM operator editor, VGM export |
+| **DefleMask** | Paid tracker | Genesis and many other chips, VGM export |
+| **MD Synth DAW** | MIT-licensed DAW | Piano roll plus register-track mode; VGM/VGZ and XGM export (XGM isn't played by Rev A) |
+| **VGMM, FMDrive VST** | Instrument / patch tools | Make `.tfi` patches, which MIDI mode loads directly (§2.5) |
 
 ## 3. The chip: YM2612 at a glance
 
@@ -237,7 +246,7 @@ flowchart LR
     JACK((3.5 mm<br/>headphones))
     BAL[Balanced driver<br/>OPA2350]
     TRS((2x 1/4 in TRS<br/>balanced L / R))
-    LCD[1.9 in 320x170<br/>green-terminal LCD]
+    LCD[20x4 blue<br/>character LCD]
     BTN[Data knob +<br/>7 buttons]
     MIDI[USB MIDI<br/>keyboard / DAW]
 
@@ -275,7 +284,7 @@ the headphone jack and the balanced outputs.
 | **Scheduler** | Runs on core 1. Releases each write at its exact sample time (1/44,100 s). Stops at the end, or after the loop has played twice. |
 | **YM2612 driver** | PIO program: put A1/A0 and D0–D7 on the pins, pulse /WR, wait the minimum gap. Also pulses /IC (reset) at power-up and on Stop to silence the chip. |
 | **Edit engine** | Keeps every sound parameter per channel. In VGM mode it holds edited parameters at your value (and applies Quick Edit as offsets) on every write; in MIDI mode it edits the current instrument. Saves instruments as `.tfi` and song edits as `.edt`. Clamps settings that would be silent or painful. |
-| **UI** | Runs on core 0. Runs the menus: debounces the 7 buttons, reads the data knob (with acceleration), and draws the green-terminal screen over SPI with DMA (font, scanlines, glow, cursor). Never delays a chip write. |
+| **UI** | Runs on core 0. Runs the menus: debounces the 7 buttons, reads the data knob (with acceleration), and drives the HD44780 LCD over I²C at 400 kHz, rewriting only characters that changed. Never delays a chip write. |
 
 ## 5. Hardware
 
@@ -285,11 +294,11 @@ the headphone jack and the balanced outputs.
 Pico USB-C ── VBUS 5V ──────┬─ ferrite + caps ── YM2612, 74HCT buffers
                            ├─ ferrite + LC filter ── low-noise LDO 4.5V ── op-amps (analog rail)
                            ├─ Pico's own 3.3V regulator ── Pico
-                           └─ ferrite + 3.3V regulator ── display (its own, to keep display noise off the audio)
+                           └─ ferrite ── LCD + backlight (5V, digital side)
 
 Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter ─┬─ NJM4556A ── 3.5 mm headphones
                                                                    └─ OPA2350 inverter ── 2× 1/4" TRS balanced
-     ├── SPI ── 1.9" LCD
+     ├── I²C ── level shifter ── 20×4 LCD backpack
      └── 7 buttons + data knob to GND
 ```
 
@@ -306,15 +315,16 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
 | Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
 | Audio jacks | 3.5 mm stereo headphone jack + 2× 1/4" TRS panel jacks | $3–4 |
-| Display | 1.9" 320×170 IPS TFT, ST7789 controller, SPI, on a breakout module with header pins | $4–8 |
-| Display supply | Small 3.3V LDO plus ferrite, just for the display and its backlight | $0.50 |
+| Display | HiLetgo HD44780 2004A 20×4 LCD, blue backlight, with I²C backpack (PCF8574 type), 5V | $10–13 |
+| I²C level shifter | 2-channel bidirectional (BSS138 MOSFETs or a PCA9306), 3.3V ↔ 5V | $0.50 |
 | Buttons | 7× 6 mm tactile switches (or 12 mm with caps for a synth feel) | $0.70–3 |
 | Data knob | Rotary encoder, no push switch needed (EC11 type), with a knob cap | $1 |
 | Power and file loading | The Pico board's own USB-C port (no extra connector) | $0 |
+| Chip window light | 2× warm-white 3 mm LEDs with resistors, on 5V, always on | $0.20 |
 | Passives | Decoupling, ferrites, op-amp resistors and caps, output caps | $2 |
 | PCB | 2-layer, about 100 × 70 mm | about $1 each in a batch of 5 |
 
-**Rough total: $35–45 per board** before the enclosure, mostly depending on the YM2612's price.
+**Rough total: $40–50 per board** before the enclosure, mostly depending on the YM2612's price.
 
 ### 5.3 Cost savers in this design
 
@@ -339,11 +349,9 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
 | GP10 | /WR | 74HCT541 #2 → YM2612 |
 | GP11 | /IC (reset) | 74HCT541 #2 → YM2612 |
 | GP21 | Clock out (GPOUT0) | 74HCT541 #2 → YM2612 φM |
-| GP12 | Display D/C | LCD |
-| GP13 | Display CS | LCD |
-| GP14 | Display SCK (SPI1) | LCD |
-| GP15 | Display MOSI (SPI1) | LCD |
-| — | Display reset tied to the Pico's RUN pin; backlight always on through a resistor | LCD |
+| GP14 | LCD SDA (I²C1) | level shifter → LCD backpack |
+| GP15 | LCD SCL (I²C1) | level shifter → LCD backpack |
+| GP12, GP13 | Spare | free for later (for example dimming the window LEDs) |
 | GP16 | Button Play | to GND, internal pull-up |
 | GP17 | Button Stop | to GND, internal pull-up |
 | GP18 | Button ◀ | to GND, internal pull-up |
@@ -395,12 +403,31 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 - Series resistors (about 100 Ω) on every buffer output into the YM2612.
 - The YM2612 is socketed and only gets 5V through a ferrite and decoupling right at its pins.
 - Keep a spare YM2612 on hand. Buy from a seller with returns, since pulled and fake chips are common.
+- **Sourcing plan (open):** real YM2612s come from used Model 1 Genesis consoles or resellers. Test every chip on the M1 breadboard rig before it goes in a box.
+
+### 5.7 Chip window light
+
+Two warm-white 3 mm LEDs on the board, angled across the top of the socketed YM2612 so the
+chip's markings catch the light through the panel window (a black package won't glow from
+behind). They run from 5V through resistors, always on, at about 5 mA each, on the digital
+side of the board. Joey's enclosure provides the window. Brighter or music-reactive lighting
+is parked for later revisions.
+
+### 5.8 Why a Raspberry Pi Pico
+
+- **PIO:** the RP2350's PIO state machines make the chip's clock and drive the bus and write strobes with exact timing, without using CPU time.
+- **Enough GPIO** for the chip bus, display, data knob, and buttons; low cost, so one per box is practical.
+- **Language:** C/C++ with the Pico SDK for the timing-critical parts.
+- **Runner-up:** Teensy 4.1 (faster, built-in SD slot, costs more).
+- **Rejected:** a full Raspberry Pi running Linux (no guaranteed real-time timing, slow to boot); STM32 (capable, but more toolchain effort for the same result).
 
 ## 6. KiCad notes for Joey's "YM2612 player" project
 
-- Symbols you may need to make: YM2612 (DIP-24) and the display module's header (check the exact module's pin order; ST7789 breakouts differ).
+- Symbols you may need to make: YM2612 (DIP-24). The LCD connects through a 4-pin header (5V, GND, SDA, SCL) to its I²C backpack.
+- The backpack's I²C address is usually **0x27**, sometimes **0x3F**; firmware scans for it.
+- The backlight draws real current (tens of mA), so feed the LCD from the 5V rail, not the Pico's 3.3V. The backpack's jumper can cut the backlight if needed.
   The Pico Plus 2 uses the standard Pico footprint (Raspberry Pi's official KiCad footprint works).
-- Put the YM2612, buffers, and op-amps on the 5V side of the board, and the display connector on the 3.3V side. Keep the display cable and its backlight current away from the audio corner.
+- Put the YM2612, buffers, and op-amps on the 5V side of the board, and the display connector on the 3.3V side. Keep the LCD cable and its backlight current away from the audio corner.
 - Keep the 7.67 MHz clock trace short, and away from the audio traces.
 - Place the headphone jack, both 1/4" TRS jacks, and the Pico board's USB-C port on board edges so the case can expose them.
 - Keep the analog section (op-amps, LDO, jacks) in one corner, away from the Pico, bus, and clock.
@@ -412,8 +439,8 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 | --- | --- | --- |
 | M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), Pico Plus 2, buffers, op-amps, display |
 | M1 | **First sound** | Breadboard: the Pico clocks the YM2612 and plays a hard-coded FM note; write gap measured |
-| M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included |
-| M3 | **Screen + panel** | Green-terminal home screen with file name and time; data knob, ◀ ▶, Play, Stop working |
+| M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included; VGM exports from Furnace and DefleMask play correctly |
+| M3 | **Screen + panel** | 20×4 LCD home screen with file name and time; data knob, ◀ ▶, Play, Stop working |
 | M3a | **Menus + editing** | Every menu page works; edits are heard live on a playing song and in MIDI mode; Write saves `.edt` and `.tfi` files |
 | M3b | **MIDI mode** | A USB keyboard or DAW plays 6-note chords on the YM2612 using built-in and borrowed instruments |
 | M4 | **Quiet audio** | Idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
@@ -424,7 +451,7 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 
 - [ ] **Headphone volume:** the balanced outs stay at a fixed line level, but the headphone jack may be
   loud. Add a small dual volume wheel on the headphone output only (about $0.50)?
-- [x] **Display:** 1.9" 320×170 ST7789 IPS LCD with the green terminal drawn in software (Joey, Oct 24).
+- [x] **Display:** HiLetgo 20×4 blue character LCD on I²C, from the Chip Box spec (Joey, Oct 24). USB-C loading and USB MIDI stay.
 - [ ] **Buttons:** small 6 mm tactile switches, or larger synth-style buttons with caps?
 - [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
 - [x] **File loading:** over USB-C into the board's flash, no microSD (Joey, Oct 24).
