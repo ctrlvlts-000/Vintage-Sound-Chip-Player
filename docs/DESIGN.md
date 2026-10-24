@@ -1,4 +1,4 @@
-# Chip Shrine: YM2612 Player — Rev A Design
+# YM2612 Player — Rev A Design
 
 Status: Draft v1.0 · Oct 24, 2026 · Owner: Joey
 
@@ -153,9 +153,9 @@ That covers every sound setting the YM2612 has.
 ### 2.5 MIDI mode
 
 1. Connect the player to a computer. It's a class-compliant USB MIDI device, so it needs no
-   drivers on Windows or macOS and shows up in Ableton Live's MIDI preferences as **Chip Shrine**,
+   drivers on Windows or macOS and shows up in Ableton Live's MIDI preferences as **YM2612**,
    alongside the USB drive. Turn on **Track** for it, then set a MIDI track's *MIDI To* to
-   Chip Shrine, channel 1 (the channel is changeable in System).
+   YM2612, channel 1 (the channel is changeable in System).
 2. Notes play the YM2612 with **6-note polyphony** (one note per FM channel; when a 7th note
    arrives, the oldest note is stolen).
 3. Switch modes in **MODE**. On the home screen in MIDI mode, the knob picks the instrument.
@@ -189,7 +189,7 @@ That covers every sound setting the YM2612 has.
 
 ### 2.6 Adding songs
 
-Plug the player into a computer with USB-C, drag `.vgm` / `.vgz` files onto the **CHIPSHRINE**
+Plug the player into a computer with USB-C, drag `.vgm` / `.vgz` files onto the **YM2612**
 drive, then eject it. The player rescans its files after you eject. Playback is paused while
 the computer has the drive mounted; MIDI works either way.
 
@@ -213,7 +213,7 @@ promised to users):
 and 3D prints it. Concept: [Rev A panel concept](https://claude.ai/artifact/8sheBY3bZY6DmseLGqauJz).
 
 - **Black body,** matte top, with a raised **round disc** where the cartridge slot was. The chip window sits inside the disc, ringed by stepped **concentric rings**.
-- **Gold italic lettering** with our own names (CHIP SHRINE, YM2612, 6-CH FM).
+- **Gold italic lettering** with only our own names (YM2612, 6-CH FM). The product is simply called **YM2612** (Joey, Oct 24).
 - **Red accents:** volume slider, power LED, Play button, and the data knob's pointer.
 - **Front-left phones jack and volume slider,** where the first model had them.
 - A **ribbed strip** along the front edge, after the original's vent ribs.
@@ -289,7 +289,7 @@ the headphone jack and the balanced outputs.
 | Module | Job |
 | --- | --- |
 | **Storage** | A FAT filesystem in the board's flash (about 14 MB free after the firmware), read with FatFs. Builds the track list. |
-| **USB** | TinyUSB composite device: a mass-storage drive called CHIPSHRINE plus a USB MIDI device called Chip Shrine. While the computer has the drive mounted, VGM playback is off; after eject, the player rescans the files. MIDI works either way. |
+| **USB** | TinyUSB composite device: a mass-storage drive labelled YM2612 plus a USB MIDI device called YM2612. While the computer has the drive mounted, VGM playback is off; after eject, the player rescans the files. MIDI works either way. |
 | **MIDI mode** | Voice allocator for 6 notes, note/velocity/pitch-bend/sustain handling, and an instrument library (presets, `.tfi` files, and instruments extracted from VGM files by watching which register sets each song writes). Writes go through the same YM2612 driver. |
 | **VGM parser** | Reads the header (clock, length, loop point) and GD3 tags (title, game). Turns commands into timed writes: YM2612 port 0/1 writes, waits, PCM data blocks, DAC writes, and DAC stream commands. Skips PSG writes. VGZ files are unzipped while loading, which matters more now since storage is limited. |
 | **Sample data** | Loads the song's PCM samples into the board's 8 MB PSRAM, so even sample-heavy tracks fit. |

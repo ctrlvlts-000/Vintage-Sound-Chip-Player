@@ -1,4 +1,4 @@
-# Chip Shrine: Later Revisions
+# YM2612 Player: Later Revisions
 
 Status: Ideas parked for after Rev A · Oct 24, 2026 · Owner: Joey
 
