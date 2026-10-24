@@ -253,7 +253,7 @@ flowchart LR
 
     BUF[74HCT buffers<br/>3.3V to 5V]
     YM{{YM2612}}
-    FILT[Filter + buffer<br/>OPA2350]
+    FILT[Model 1-style filter<br/>OPA2350]
     AMP[NJM4556A<br/>headphone driver]
     JACK((3.5 mm<br/>headphones))
     BAL[Balanced driver<br/>OPA2350]
@@ -322,7 +322,7 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Sound chip | YM2612, pulled from a Model 1 Genesis or bought tested | $5–15 |
 | Chip socket | 24-pin DIP, turned-pin | $0.50 |
 | Level shifting | 2× 74HCT541 (one-way 3.3V → 5V buffers, powered from 5V) | $1 |
-| Filter / buffer | OPA2350 low-noise, rail-to-rail dual op-amp rated for 2.7–5.5V (L and R) | $2 |
+| Filter / buffer | OPA2350 low-noise, rail-to-rail dual op-amp rated for 2.7–5.5V (L and R), with Model 1 filter values | $2 |
 | Headphone driver | NJM4556A dual op-amp, AC-coupled output | $1 |
 | Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
 | Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
@@ -379,8 +379,13 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
 
 **Signal path**
 
-- MOL and MOR each go through a load resistor into an **OPA2350** stage that buffers and
-  low-pass filters them, based on a known-good Genesis Model 1 output stage.
+- **Authentic sound only (Joey, Oct 24).** The YM2612's own built-in DAC is the same one the
+  console used, so the "Mega Drive DAC" comes for free. After it, the board copies the
+  **first-model console's analog output stage**: the same load resistors on MOL/MOR and the
+  same low-pass filter that softens the top end. There's no "clean" mode and no switch.
+- The filter is built around an **OPA2350** buffer, with the resistor and capacitor values taken
+  from a real Model 1 schematic and checked by measuring an original console's output in M4.
+- No USB audio: like the original hardware, the sound only leaves through the analog jacks.
 - From there, each channel splits two ways:
   - **Headphones:** an NJM4556A drives the 3.5 mm jack through about 220 µF output capacitors.
   - **Balanced line out:** the filter output is the *hot* leg, and a second OPA2350 makes an
@@ -455,7 +460,7 @@ is parked for later revisions.
 | M3 | **Screen + panel** | 20×4 LCD home screen with file name and time; data knob, ◀ ▶, Play, Stop working |
 | M3a | **Menus + editing** | Every menu page works; edits are heard live on a playing song and in MIDI mode; Write saves `.edt` and `.tfi` files |
 | M3b | **MIDI mode** | A USB keyboard or DAW plays 6-note chords on the YM2612 using built-in and borrowed instruments |
-| M4 | **Quiet audio** | Idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
+| M4 | **Authentic, quiet audio** | Filter matches the Model 1 output stage (A/B against a real console);  Idle noise floor at or below −70 dB on the balanced outs into an interface on the same PC; no hum or whine on headphones |
 | M5 | **Schematic + PCB** | Joey's KiCad project matches this doc; boards ordered |
 | M6 | **Rev A built** | Assembled board loads files over USB-C and plays them in a simple case |
 
