@@ -1,0 +1,43 @@
+Designator,Qty,Value,Manufacturer,Manufacturer Part Number,Description,Package / Footprint,Type,Fit
+"C1,C3,C6,C33",4,47uF,Any,generic,"electrolytic, 16V",CP_Elec_5x5.4,SMD,Fit
+"C2,C8,C9,C10,C11,C12,C13,C29,C30,C31,C34,C38",12,100nF,Any,generic,"X7R, 16V",C_0603_1608Metric,SMD,Fit
+C4,1,22uF,Any,generic,"X5R, 10V, 0805",C_0805_2012Metric,SMD,Fit
+C5,1,4.7uF,Any,generic,"X5R, 10V, 0805",C_0805_2012Metric,SMD,Fit
+"C7,C32,C37",3,10uF,Any,generic,"X5R, 10V, 0805",C_0805_2012Metric,SMD,Fit
+C14,1,10uF,Any,generic,"X5R, 16V, 0805",C_0805_2012Metric,SMD,Fit
+"C15,C22",2,1uF,Any,generic,"film or C0G/X7R 1206, 25V (film preferred)",C_1206_3216Metric,SMD,Fit
+"C16,C23",2,470pF,Any,generic,"C0G, 50V",C_0603_1608Metric,SMD,Fit
+"C17,C18,C24,C25",4,10uF,Any,generic,"electrolytic, 16V, low-leakage",CP_Elec_5x5.4,SMD,Fit
+"C19,C26",2,10uF,Any,generic,"electrolytic, 16V",CP_Elec_5x5.4,SMD,Fit
+"C20,C27",2,1uF,Any,generic,"film or X7R 1206, 25V",C_1206_3216Metric,SMD,Fit
+"C21,C28",2,220uF,Any,generic,"electrolytic, 10V",CP_Elec_6.3x7.7,SMD,Fit
+"C35,C36",2,10nF,Any,generic,"X7R, 16V",C_0603_1608Metric,SMD,Fit
+"D1,D2",2,warm white 3 mm,Any,generic,"3 mm through-hole LED, warm white, about 3V at 5 mA, leads left long",LED_D3.0mm,THT,Fit
+"FB1,FB2",2,600R@100MHz,Murata,BLM18PG221SN1D,"ferrite bead, 0603, 1A+",L_0603_1608Metric,SMD,Fit
+J1,0,Spare GPIO (not fitted),Any,generic,,PinHeader_1x04_P2.54mm_Vertical,THT,Do not fit
+"J2,J3",2,"1/4"" TRS balanced out L / 1/4"" TRS balanced out R",Neutrik,NMJ6HCD2,"Neutrik 1/4in stereo jack, horizontal PCB. The footprint's SN pad is left unconnected.",Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal,THT,Fit
+J4,1,3.5 mm headphones (front),CUI Devices / Same Sky,SJ1-3523N,"CUI 3.5 mm stereo jack, horizontal",Jack_3.5mm_CUI_SJ1-3523N_Horizontal,THT,Fit
+J5,1,"LCD (I2C backpack: GND, VCC, SDA, SCL)",JST,B4B-XH-A(LF)(SN),JST XH 4-pin header,JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical,THT,Fit
+L1,1,10uH,Murata,LQH32CN100K53L,"10uH, 1210, 300mA+",L_1210_3225Metric,SMD,Fit
+"Q1,Q2",2,BSS138,onsemi,BSS138,"N-MOSFET, SOT-23",SOT-23,SMD,Fit
+"R1,R2,R3,R4,R24,R25,R33,R37,R38,R46,R47,R48,R49,R50",14,10k,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+"R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R26,R28,R39,R41",16,100,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+R17,1,33,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+R18,0,33,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Do not fit
+"R19,R20",2,430,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+"R21,R34",2,2.2k,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+"R22,R35",2,47k,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+"R23,R27,R29,R31,R36,R40,R42,R44",8,100k,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+"R30,R43",2,0,Any,generic,"0 ohm, 0603 (ground lift option)",R_0603_1608Metric,SMD,Fit
+"R32,R45",2,10,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+"R51,R52,R53,R54",4,4.7k,Any,generic,"1%, 0603",R_0603_1608Metric,SMD,Fit
+RV1,1,"10k audio, dual slide",Bourns,PTA2044-2015DPA103,"Bourns 20 mm travel dual-gang slide pot, 10k audio taper, 15 mm metal lever. Footprint still to draw.",TODO: footprint,THT,Fit
+"SW1,SW2,SW3,SW4,SW5,SW6,SW7",7,Play (red cap) / Stop / Left / Right / Edit / Exit / Write,Omron,B3F-4055,"Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap",SW_PUSH-12mm,THT,Fit
+SW8,1,Data knob,Bourns,PEC11R-4215F-N0024,"Bourns 24-step encoder, no push switch, 15 mm shaft (EC11 footprint)",RotaryEncoder_Alps_EC11E_Vertical_H20mm,THT,Fit
+U1,1,LP5907MFX-4.5,Texas Instruments,LP5907MFX-4.5/NOPB,"low-noise LDO, 4.5V, 250mA",SOT-23-5,SMD,Fit
+U2,1,Pimoroni Pico Plus 2,Pimoroni,PIM724,"Pimoroni Pico Plus 2, Digi-Key PIM724, soldered flat by its castellated edges",Pimoroni_PicoPlus2_SMD,SMD,Fit
+"U3,U4",2,74HCT541,Nexperia,"74HCT541D,653","octal buffer, HCT, SOIC-20",SOIC-20W_7.5x12.8mm_P1.27mm,SMD,Fit
+U5,1,"YM2612 (socket only, chip fitted by hand)",Mill-Max,110-43-624-41-001000,Mill-Max 24-pin 600 mil turned-pin DIP socket. PCBWay fits the socket only.,DIP-24_W15.24mm_Socket,THT,Fit
+"U6,U7",2,OPA2350UA,Texas Instruments,OPA2350UA,"dual rail-to-rail op-amp, 2.7-5.5V",SOIC-8_3.9x4.9mm_P1.27mm,SMD,Fit
+U8,1,NJM4556AD,Nisshinbo (NJR),NJM4556AD,"dual high-current op-amp, DIP-8",DIP-8_W7.62mm,THT,Fit
+X1,0,"7.670454 MHz, 5V (not fitted)",Any,generic,"half-size DIP-8 oscillator can, 5V CMOS, 7.670454 MHz",Oscillator_DIP-8,THT,Do not fit

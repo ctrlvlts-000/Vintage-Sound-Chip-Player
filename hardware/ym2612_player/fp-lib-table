@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "ym2612")(type "KiCad")(uri "${KIPRJMOD}/ym2612.pretty")(options "")(descr "YM2612 player custom footprints"))
+)
