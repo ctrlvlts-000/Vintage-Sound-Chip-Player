@@ -45,7 +45,7 @@ buried more than one level deep, and the screen always says what you're editing.
 
 ### 2.1 The screen: a tiny green terminal
 
-**Decision (Joey, Oct 24): a cheap display, not necessarily OLED.** **Proposal:** a
+**Decision (Joey, Oct 24):** a
 **1.9" 320 × 170 IPS color TFT** with an ST7789 controller, SPI, about $5. It's a wide strip
 (about 43 × 23 mm active area), close to the shape of a vintage synth's LCD. Because it's a
 color screen, the firmware draws the green terminal itself on a black background:
@@ -424,7 +424,7 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 
 - [ ] **Headphone volume:** the balanced outs stay at a fixed line level, but the headphone jack may be
   loud. Add a small dual volume wheel on the headphone output only (about $0.50)?
-- [x] **Display:** cheap, not necessarily OLED (Joey, Oct 24). Proposed: 1.9" 320×170 ST7789 IPS with the green terminal drawn in software.
+- [x] **Display:** 1.9" 320×170 ST7789 IPS LCD with the green terminal drawn in software (Joey, Oct 24).
 - [ ] **Buttons:** small 6 mm tactile switches, or larger synth-style buttons with caps?
 - [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
 - [x] **File loading:** over USB-C into the board's flash, no microSD (Joey, Oct 24).
