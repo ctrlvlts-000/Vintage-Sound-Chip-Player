@@ -23,7 +23,7 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 1. **VGM import over USB-C:** plug the player into a computer and it shows up as a USB drive. Drag `.vgm` and `.vgz` files onto it. No memory card.
 2. **Playback** on a real YM2612.
 3. **Audio outputs:** a 3.5 mm headphone jack, plus **two balanced 1/4" TRS line outs** (L and R) for an audio interface. Target: **noise floor at or below −70 dB** (§5.5).
-4. **A small green-screen display:** a 3.12" 256 × 64 OLED styled like a tiny vintage green terminal. It always shows the VGM file that's playing, plus the name of whatever you're editing (§2.1).
+4. **A small green-screen display:** a cheap 1.9" 320 × 170 color LCD drawn like a tiny vintage green terminal. It always shows the VGM file that's playing, plus the name of whatever you're editing (§2.1).
 5. **A late-80s digital synth front panel:** one data knob and 7 buttons (Play, Stop, ◀, ▶, Edit, Exit, Write) driving simple menus for every function (§2.2–2.4).
 6. **Full sound editing:** every YM2612 sound parameter, plus Korg DS-8 style quick controls, reachable from the menus (§2.4).
 7. **USB MIDI in** over the same USB-C cable, with two modes: **VGM mode** plays song files, **MIDI mode** plays the YM2612 like a synth from Ableton or any DAW (§2.5). Costs no extra parts.
@@ -45,21 +45,25 @@ buried more than one level deep, and the screen always says what you're editing.
 
 ### 2.1 The screen: a tiny green terminal
 
-**Proposal:** a **3.12" 256 × 64 OLED** with an SSD1322 controller, in **green**. It's about
-77 mm wide, the shape of a vintage synth's LCD, and OLED black is truly black, so the green
-text glows like a terminal. The SSD1322 has 16 brightness levels per pixel, which the firmware
-uses for the terminal look:
+**Decision (Joey, Oct 24): a cheap display, not necessarily OLED.** **Proposal:** a
+**1.9" 320 × 170 IPS color TFT** with an ST7789 controller, SPI, about $5. It's a wide strip
+(about 43 × 23 mm active area), close to the shape of a vintage synth's LCD. Because it's a
+color screen, the firmware draws the green terminal itself on a black background:
 
-- A chunky **VT220-style bitmap font** (8 lines × 42 characters, or 4 lines × 32 in the large font).
+- A chunky **VT220-style bitmap font** (8 lines × 40 characters, or 5 lines × 26 in the large font).
+- **Phosphor green** text, with **amber** and **plain white** styles in the System menu.
 - **Scanlines:** every other pixel row drawn slightly dimmer, like a CRT.
 - **Phosphor glow:** a faint halo around lit characters and a short fade when text changes.
 - **Inverse-video** highlight for the selected item and a **blinking block cursor**.
 - A **boot screen** that types out `CHIP SHRINE  YM2612 OK` like an old computer.
 
-Green modules cost more (Newhaven sells the 3.12" in green, around $45–50). The same size and
-pinout is sold cheaply (around $15–25) in white, yellow, or blue, so the board takes any of
-them and the color is a purchase choice. A **System** setting picks the style (green
-phosphor, amber, plain) and turns scanlines on or off.
+The one trade-off against OLED: an LCD's black is lit from behind, so in a dark room the
+background is very dark grey rather than true black. The firmware keeps the backlight at a
+moderate level to help.
+
+Alternatives, if this one doesn't suit: a **2.0" 320 × 240** ST7789 (same wiring, taller and
+less synth-like), or a **20 × 4 character LCD** with a yellow-green backlight (the authentic
+DX7/M1 look, but dark text on green, with no terminal effects).
 
 **Home screen (VGM mode)** — the playing file is always on the top line:
 
@@ -233,7 +237,7 @@ flowchart LR
     JACK((3.5 mm<br/>headphones))
     BAL[Balanced driver<br/>OPA2350]
     TRS((2x 1/4 in TRS<br/>balanced L / R))
-    OLED[256x64 green OLED]
+    LCD[1.9 in 320x170<br/>green-terminal LCD]
     BTN[Data knob +<br/>7 buttons]
     MIDI[USB MIDI<br/>keyboard / DAW]
 
@@ -248,7 +252,7 @@ flowchart LR
     FILT --> AMP --> JACK
     FILT --> BAL --> TRS
     BTN --> UI
-    UI --> OLED
+    UI --> LCD
     UI -- "start, stop" --> SCHED
     MIDI -- "notes (MIDI mode)" --> SYN
 ```
@@ -281,11 +285,11 @@ the headphone jack and the balanced outputs.
 Pico USB-C ── VBUS 5V ──────┬─ ferrite + caps ── YM2612, 74HCT buffers
                            ├─ ferrite + LC filter ── low-noise LDO 4.5V ── op-amps (analog rail)
                            ├─ Pico's own 3.3V regulator ── Pico
-                           └─ ferrite + 3.3V regulator ── OLED (its own, to keep display noise off the audio)
+                           └─ ferrite + 3.3V regulator ── display (its own, to keep display noise off the audio)
 
 Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter ─┬─ NJM4556A ── 3.5 mm headphones
                                                                    └─ OPA2350 inverter ── 2× 1/4" TRS balanced
-     ├── SPI ── 3.12" OLED
+     ├── SPI ── 1.9" LCD
      └── 7 buttons + data knob to GND
 ```
 
@@ -302,15 +306,15 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
 | Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
 | Audio jacks | 3.5 mm stereo headphone jack + 2× 1/4" TRS panel jacks | $3–4 |
-| Display | 3.12" 256×64 SSD1322 OLED, SPI. Green (Newhaven, about $45–50) or a generic white/yellow/blue module (about $15–25), same pinout | $15–50 |
-| Display supply | Small 3.3V LDO plus ferrite, just for the OLED | $0.50 |
+| Display | 1.9" 320×170 IPS TFT, ST7789 controller, SPI, on a breakout module with header pins | $4–8 |
+| Display supply | Small 3.3V LDO plus ferrite, just for the display and its backlight | $0.50 |
 | Buttons | 7× 6 mm tactile switches (or 12 mm with caps for a synth feel) | $0.70–3 |
 | Data knob | Rotary encoder, no push switch needed (EC11 type), with a knob cap | $1 |
 | Power and file loading | The Pico board's own USB-C port (no extra connector) | $0 |
 | Passives | Decoupling, ferrites, op-amp resistors and caps, output caps | $2 |
 | PCB | 2-layer, about 100 × 70 mm | about $1 each in a batch of 5 |
 
-**Rough total: $45–85 per board** before the enclosure, mostly depending on the display color and the YM2612's price.
+**Rough total: $35–45 per board** before the enclosure, mostly depending on the YM2612's price.
 
 ### 5.3 Cost savers in this design
 
@@ -335,11 +339,11 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
 | GP10 | /WR | 74HCT541 #2 → YM2612 |
 | GP11 | /IC (reset) | 74HCT541 #2 → YM2612 |
 | GP21 | Clock out (GPOUT0) | 74HCT541 #2 → YM2612 φM |
-| GP12 | Display D/C | OLED |
-| GP13 | Display CS | OLED |
-| GP14 | Display SCK (SPI1) | OLED |
-| GP15 | Display MOSI (SPI1) | OLED |
-| — | Display reset tied to the Pico's RUN pin | OLED |
+| GP12 | Display D/C | LCD |
+| GP13 | Display CS | LCD |
+| GP14 | Display SCK (SPI1) | LCD |
+| GP15 | Display MOSI (SPI1) | LCD |
+| — | Display reset tied to the Pico's RUN pin; backlight always on through a resistor | LCD |
 | GP16 | Button Play | to GND, internal pull-up |
 | GP17 | Button Stop | to GND, internal pull-up |
 | GP18 | Button ◀ | to GND, internal pull-up |
@@ -394,9 +398,9 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 
 ## 6. KiCad notes for Joey's "YM2612 player" project
 
-- Symbols you may need to make: YM2612 (DIP-24) and the OLED module (check the module's own header pinout; generic SSD1322 modules usually need jumpers set for 4-wire SPI).
+- Symbols you may need to make: YM2612 (DIP-24) and the display module's header (check the exact module's pin order; ST7789 breakouts differ).
   The Pico Plus 2 uses the standard Pico footprint (Raspberry Pi's official KiCad footprint works).
-- Put the YM2612, buffers, and op-amps on the 5V side of the board, and the display connector on the 3.3V side. The OLED's built-in high-voltage booster is noisy, so keep it and its cable away from the audio corner.
+- Put the YM2612, buffers, and op-amps on the 5V side of the board, and the display connector on the 3.3V side. Keep the display cable and its backlight current away from the audio corner.
 - Keep the 7.67 MHz clock trace short, and away from the audio traces.
 - Place the headphone jack, both 1/4" TRS jacks, and the Pico board's USB-C port on board edges so the case can expose them.
 - Keep the analog section (op-amps, LDO, jacks) in one corner, away from the Pico, bus, and clock.
@@ -406,7 +410,7 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 
 | # | Milestone | Done when |
 | --- | --- | --- |
-| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), Pico Plus 2, buffers, op-amp, OLED |
+| M0 | **Parts in hand** | Tested-good YM2612 (plus a spare), Pico Plus 2, buffers, op-amps, display |
 | M1 | **First sound** | Breadboard: the Pico clocks the YM2612 and plays a hard-coded FM note; write gap measured |
 | M2 | **Play a VGM** | Files dragged on over USB-C appear on the drive, and a Genesis VGM plays start to finish, samples included |
 | M3 | **Screen + panel** | Green-terminal home screen with file name and time; data knob, ◀ ▶, Play, Stop working |
@@ -420,7 +424,7 @@ character, not noise from the board, and it isn't part of the −70 dB figure.
 
 - [ ] **Headphone volume:** the balanced outs stay at a fixed line level, but the headphone jack may be
   loud. Add a small dual volume wheel on the headphone output only (about $0.50)?
-- [ ] **Display color:** true green (about $45–50) or a cheaper white/yellow module with the terminal style in software?
+- [x] **Display:** cheap, not necessarily OLED (Joey, Oct 24). Proposed: 1.9" 320×170 ST7789 IPS with the green terminal drawn in software.
 - [ ] **Buttons:** small 6 mm tactile switches, or larger synth-style buttons with caps?
 - [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
 - [x] **File loading:** over USB-C into the board's flash, no microSD (Joey, Oct 24).
