@@ -37,7 +37,6 @@ recommendations waiting for Joey's OK; items marked **Open** still need a call.
 
 - Register lights, the 4-knob panel, fancier window lighting (see [LATER-REVISIONS.md](LATER-REVISIONS.md)).
 - Seek, loop, A-B repeat.
-- Volume control (see Open questions, §8).
 - Genesis PSG parts: only the YM2612 plays (decided Oct 23).
 - DIN or TRS MIDI jacks (USB MIDI only), MIDI out, MIDI control of knobs.
 - Other chips, battery, wireless.
@@ -207,6 +206,19 @@ promised to users):
 | **MD Synth DAW** | MIT-licensed DAW | Piano roll plus register-track mode; VGM/VGZ and XGM export (XGM isn't played by Rev A) |
 | **VGMM, FMDrive VST** | Instrument / patch tools | Make `.tfi` patches, which MIDI mode loads directly (§2.5) |
 
+### 2.8 Chassis look: a 16-bit console homage
+
+**Decision (Joey, Oct 24):** the chassis pays homage to the original Sega Mega Drive
+(first model), using its shapes and colours but **no Sega logos or wordmarks**. Joey designs
+and 3D prints it. Concept: [Rev A panel concept](https://claude.ai/artifact/8sheBY3bZY6DmseLGqauJz).
+
+- **Black body,** matte top, with a raised **round disc** where the cartridge slot was. The chip window sits inside the disc, ringed by stepped **concentric rings**.
+- **Gold italic lettering** with our own names (CHIP SHRINE, YM2612, 6-CH FM).
+- **Red accents:** volume slider, power LED, Play button, and the data knob's pointer.
+- **Front-left phones jack and volume slider,** where the first model had them.
+- A **ribbed strip** along the front edge, after the original's vent ribs.
+- The LCD, data knob, and pill-shaped buttons sit to the right of the disc. USB-C and the two balanced outs are on the back.
+
 ## 3. The chip: YM2612 at a glance
 
 | Fact | What Rev A does about it |
@@ -314,7 +326,8 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Headphone driver | NJM4556A dual op-amp, AC-coupled output | $1 |
 | Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
 | Analog supply | Low-noise LDO (about 4.5V, for example TPS7A20) plus LC filter | $1 |
-| Audio jacks | 3.5 mm stereo headphone jack + 2× 1/4" TRS panel jacks | $3–4 |
+| Audio jacks | 3.5 mm stereo headphone jack (front) + 2× 1/4" TRS panel jacks (rear) | $3–4 |
+| Headphone volume | Dual-gang slide potentiometer with a red cap, before the headphone driver only | $1–2 |
 | Display | HiLetgo HD44780 2004A 20×4 LCD, blue backlight, with I²C backpack (PCF8574 type), 5V | $10–13 |
 | I²C level shifter | 2-channel bidirectional (BSS138 MOSFETs or a PCA9306), 3.3V ↔ 5V | $0.50 |
 | Buttons | 7× 6 mm tactile switches (or 12 mm with caps for a synth feel) | $0.70–3 |
@@ -335,7 +348,6 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
   can as a fallback.
 - **No busy-flag reads,** so the buffers only go one way and /RD is tied high.
 - **No memory card, USB connector, regulator, or power switch.** The Pico board's USB-C port loads files and powers everything.
-- **No volume control** (see §8).
 
 ### 5.4 Pin map (Proposal)
 
@@ -429,7 +441,7 @@ is parked for later revisions.
   The Pico Plus 2 uses the standard Pico footprint (Raspberry Pi's official KiCad footprint works).
 - Put the YM2612, buffers, and op-amps on the 5V side of the board, and the display connector on the 3.3V side. Keep the LCD cable and its backlight current away from the audio corner.
 - Keep the 7.67 MHz clock trace short, and away from the audio traces.
-- Place the headphone jack, both 1/4" TRS jacks, and the Pico board's USB-C port on board edges so the case can expose them.
+- Place the headphone jack and volume slider on the front-left edge, and both 1/4" TRS jacks and the Pico board's USB-C port on the rear edge, so the case can expose them.
 - Keep the analog section (op-amps, LDO, jacks) in one corner, away from the Pico, bus, and clock.
 - Add test points for D0–D7, A0, A1, /WR, and the clock for the logic analyzer in M1.
 
@@ -449,8 +461,7 @@ is parked for later revisions.
 
 ## 8. Open questions
 
-- [ ] **Headphone volume:** the balanced outs stay at a fixed line level, but the headphone jack may be
-  loud. Add a small dual volume wheel on the headphone output only (about $0.50)?
+- [x] **Headphone volume:** a front slide pot on the headphone output only, part of the console homage (Oct 24). The balanced outs stay at a fixed line level.
 - [x] **Display:** HiLetgo 20×4 blue character LCD on I²C, from the Chip Box spec (Joey, Oct 24). USB-C loading and USB MIDI stay.
 - [ ] **Buttons:** small 6 mm tactile switches, or larger synth-style buttons with caps?
 - [ ] **Clock:** Pico-generated clock (proposed), or an oscillator can for exact Genesis pitch?
