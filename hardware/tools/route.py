@@ -13,7 +13,8 @@ import tempfile
 import pcbnew
 
 PCB, JAR = sys.argv[1], sys.argv[2]
-POWER = {"GND": 500, "GNDA": 500, "+5V": 500, "+5V_YM": 400, "+4V5A": 400, "+3V3": 400}
+# +4V5A stays at 250 um so it can reach the TPA6132A2's 0.25 mm QFN pads.
+POWER = {"GND": 500, "+5V": 500, "+5V_YM": 400, "+4V5A": 250, "+3V3": 400}
 
 def import_ses(board, path):
     """Adds Freerouting's tracks and vias to the board. (KiCad's own SES import needs the GUI.)"""

@@ -19,8 +19,8 @@ LOCAL_FP = os.path.join(os.path.dirname(os.path.abspath(OUT)), "ym2612.pretty")
 
 W, D = 240.0, 120.0           # board size, mm. Rear edge is y = 0, front edge is y = D.
 OX, OY = 50.0, 50.0           # where the board sits on KiCad's page
-AUDIO_X = 62.0                # GNDA (audio) area is left of this line, plus the YM2612 corner
-POWER_NETS = {"GND", "GNDA", "+5V", "+5V_YM", "+4V5A", "+3V3"}
+AUDIO_X = 62.0                # audio parts stay left of this line (one solid ground, partitioned by placement)
+POWER_NETS = {"GND", "+5V", "+5V_YM", "+4V5A", "+3V3"}
 
 mm = pcbnew.FromMM
 
@@ -71,6 +71,10 @@ def load(ref):
         n = e["nets"].get(pad.GetNumber())
         if n and n != "NC":
             pad.SetNet(netinfo[n])
+    for pad in fp.Pads():
+        # Ground pins join the plane solidly: SMD decoupling pads and the YM2612 socket's ground pins (1, 12, 14, 19).
+        if pad.GetNetname() == "GND" and (pad.GetAttribute() == pcbnew.PAD_ATTRIB_SMD or ref == "U5"):
+            pad.SetZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
     fp.SetExcludedFromPosFiles(False)              # some stock footprints ship excluded; only DNP parts should be
     fp.SetExcludedFromBOM(False)
     if e["dnp"]:
@@ -128,21 +132,23 @@ place("D2", 86.2, 74.0, 90)
 place("U3", 84.0, 24.0, 180)                      # data buffer, between the Pico and the chip
 place("U4", 84.0, 44.0, 180)                      # control/clock buffer
 place("X1", 92.0, 96.0, 0)                        # optional oscillator can (not fitted)
-place("NT1", 80.0, 96.0, 0)                       # GND/GNDA join, beside the chip's A.GND corner
+place("FB1", 90.0, 8.0, 0)                        # ferrite from USB 5V to the chip and buffer rail, by the buffers
 # Audio area, left.
 place("U6", 46.0, 52.0, 0)                        # Model 1 filter, L and R
 place("U7", 46.0, 70.0, 0)                        # inverters for the balanced hot legs
-place("U8", 18.0, 70.0, 0)                        # NJM4556A headphone driver (DIP-8)
+place("U8", 26.0, 96.0, 0)                        # TPA6132A2 headphone amp, next to the headphone jack
 place("U1", 50.0, 36.0, 0)                        # 4.5 V analog LDO
 # Right side: LCD connector, buttons, knob. The LCD module sits above this area on standoffs.
-place("J6", 128.0, 14.0, 0)
+place("J6", 120.0, 8.0, 270)                      # LCD plug, beside the module rather than under its I2C backpack
 for i in range(7):
     place(f"SW{i + 1}", 120.0 + i * 17.0, 98.0, 0)
-place("SW8", 220.5, 36.0, 0)                      # data knob: shaft centre at (228, 38.5)
+place("SW8", 223.5, 77.5, 0)                      # data knob: shaft centre at (231, 80), below the LCD so the knob clears it
 place("J1", 122.0, 40.0, 0)                       # spare GPIO header (not fitted)
 
 holes = []
-for i, (x, y) in enumerate([(4, 4), (W - 4, 4), (4, D - 4), (W - 4, D - 4)]):
+# Corner holes, then the LCD module's four standoffs (2004A: 93 x 55 mm hole pattern on its 98 x 60 mm board).
+for i, (x, y) in enumerate([(4, 4), (W - 4, 4), (4, D - 4), (W - 4, D - 4),
+                            (126.5, 10.5), (219.5, 10.5), (126.5, 65.5), (219.5, 65.5)]):
     ref = f"H{i + 1}"
     fp = place(ref, x, y, 0)
     holes.append(ref)
@@ -165,6 +171,10 @@ def free(box, margin=0.4):
 
 
 def net_targets(ref):
+    if ref in design.NEAR:                        # decoupling: right at the supply pin it serves
+        chip, pin = design.NEAR[ref]
+        pad = footprints[chip].FindPadByNumber(pin)
+        return [(pcbnew.ToMM(pad.GetPosition().x) - OX, pcbnew.ToMM(pad.GetPosition().y) - OY)]
     pts = []
     for n in parts[ref]["nets"].values():
         if n in POWER_NETS or n == "NC":
@@ -179,8 +189,10 @@ def net_targets(ref):
 
 
 def region_ok(ref, box):
+    if ref in design.NEAR:
+        return True
     nets = set(parts[ref]["nets"].values())
-    audio = bool(nets & {"GNDA", "+4V5A", "VREF"}) or any(n.startswith(("F", "HOT", "COLD", "INV", "HP", "VOL", "PHONE", "SLEEVE")) for n in nets)
+    audio = bool(nets & {"+4V5A", "VREF", "VA_RAW", "VA_IN"}) or any(n.startswith(("F", "HOT", "COLD", "INV", "HP", "VOL", "PHONE", "SLEEVE")) for n in nets)
     if audio:
         return box[2] < AUDIO_X + 6
     return box[0] > AUDIO_X - 2
@@ -228,7 +240,8 @@ def autoplace(ref):
 # Resistors, capacitors and other small parts first (in reference order, so each chain grows outward from its chip),
 # test points last.
 todo = [r for r in parts if r not in fixed]
-for ref in sorted(todo, key=lambda r: (r.startswith("TP"), r[0] not in "RCLQDF", int("".join(c for c in r if c.isdigit()) or 0))):
+for ref in sorted(todo, key=lambda r: (r not in design.NEAR, r.startswith("TP"), r[0] not in "RCLQDF",
+                                      int("".join(c for c in r if c.isdigit()) or 0))):
     autoplace(ref)
 
 # ------------------------------------------------------------------ outline, keep-outs and notes
@@ -296,11 +309,10 @@ def zone(net, layer, poly, priority=0):
     return z
 
 
-# GNDA: the audio area on the left plus the YM2612's corner. GND: everything else. 1 mm gap between them.
-gnda_poly = [(0.5, 0.5), (AUDIO_X, 0.5), (AUDIO_X, 56), (90, 56), (90, D - 0.5), (0.5, D - 0.5)]
-gnd_poly = [(AUDIO_X + 1, 0.5), (W - 0.5, 0.5), (W - 0.5, D - 0.5), (91, D - 0.5), (91, 55), (AUDIO_X + 1, 55)]
+# One unbroken ground on both layers. The audio parts sit together on the left, away from USB, the bus and the
+# LCD, so digital return currents (which flow under their own tracks) stay out of the audio corner.
+gnd_poly = [(0.5, 0.5), (W - 0.5, 0.5), (W - 0.5, D - 0.5), (0.5, D - 0.5)]
 for layer in (pcbnew.B_Cu, pcbnew.F_Cu):
-    zone("GNDA", layer, gnda_poly)
     zone("GND", layer, gnd_poly)
 
 pcbnew.SaveBoard(OUT, board)
