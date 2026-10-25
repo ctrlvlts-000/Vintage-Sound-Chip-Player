@@ -255,7 +255,7 @@ flowchart LR
     BUF[74HCT buffers<br/>3.3V to 5V]
     YM{{YM2612}}
     FILT[Model 1-style filter<br/>OPA2350]
-    AMP[NJM4556A<br/>headphone driver]
+    AMP[TPA6132A2<br/>headphone amp]
     JACK((3.5 mm<br/>headphones))
     BAL[Balanced driver<br/>OPA2350]
     TRS((2x 1/4 in TRS<br/>balanced L / R))
@@ -309,7 +309,7 @@ Pico USB-C ── VBUS 5V ──────┬─ ferrite + caps ── YM2612,
                            ├─ Pico's own 3.3V regulator ── Pico
                            └─ ferrite ── LCD + backlight (5V, digital side)
 
-Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter ─┬─ NJM4556A ── 3.5 mm headphones
+Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter ─┬─ TPA6132A2 ── 3.5 mm headphones
                                                                    └─ OPA2350 inverter ── 2× 1/4" TRS balanced
      ├── I²C ── level shifter ── 20×4 LCD backpack
      └── 7 buttons + data knob to GND
@@ -324,9 +324,9 @@ Pico GPIO ── 2× 74HCT541 ── YM2612 (DIP socket) ── OPA2350 filter �
 | Chip socket | 24-pin DIP, turned-pin (Mill-Max 110-43-624-41-001000). PCBWay fits the socket; Joey fits the chip | $2 |
 | Level shifting | 2× 74HCT541 (one-way 3.3V → 5V buffers, powered from 5V) | $1 |
 | Filter / buffer | OPA2350 low-noise, rail-to-rail dual op-amp rated for 2.7–5.5V (L and R), with Model 1 filter values | $2 |
-| Headphone driver | NJM4556AD dual op-amp (DIP-8), AC-coupled output | $1 |
+| Headphone driver | TI TPA6132A2 stereo headphone amp (WQFN-16), runs from the 4.5V rail, ground-centred outputs with no output capacitors, enable pin mutes it at power-up (fix register F5, Oct 25) | $1.50 |
 | Balanced driver | OPA2350 dual op-amp making the inverted (cold) leg for L and R | $2 |
-| Analog supply | LP5907MFX-4.5 low-noise 4.5V LDO plus ferrite and 10 µH / 22 µF filter | $1 |
+| Analog supply | LP5907MFX-4.5 low-noise 4.5V LDO plus ferrite and 10 µH / 22 µF filter, damped by a 47 µF electrolytic | $1 |
 | Audio jacks | 3.5 mm stereo headphone jack (front) + 2× 1/4" TRS panel jacks (rear) | $3–4 |
 | Headphone volume | Dual-gang slide potentiometer with a red cap, before the headphone driver only | $1–2 |
 | Display | HiLetgo HD44780 2004A 20×4 LCD, blue backlight, with I²C backpack (PCF8574 type), 5V | $10–13 |
@@ -392,7 +392,9 @@ Consecutive pins keep the PIO program simple. The Pico Plus 2 uses the standard 
   M4 comparison says so.
 - No USB audio: like the original hardware, the sound only leaves through the analog jacks.
 - From there, each channel splits two ways:
-  - **Headphones:** an NJM4556A drives the 3.5 mm jack through about 220 µF output capacitors.
+  - **Headphones:** a TPA6132A2 headphone amp drives the 3.5 mm jack directly (its outputs sit at 0 V, so no
+    output capacitors). It runs at -6 dB gain, so the filter's full output fits its swing, and the Pico keeps it
+    switched off until the audio rail has settled, which stops the power-on pop.
   - **Balanced line out:** the filter output is the *hot* leg, and a second OPA2350 makes an
     inverted *cold* leg. Both go through 100 Ω resistors and DC-blocking capacitors to a 1/4"
     TRS jack (tip = hot, ring = cold, sleeve = ground). A 5V board can only swing about 3 V
