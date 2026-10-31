@@ -113,13 +113,13 @@
         "min_microvia_diameter": 0.19999999999999998,
         "min_microvia_drill": 0.09999999999999999,
         "min_resolved_spokes": 2,
-        "min_silk_clearance": 0.0,
-        "min_text_height": 0.7999999999999999,
-        "min_text_thickness": 0.08,
+        "min_silk_clearance": 0.09999999999999999,
+        "min_text_height": 1.0,
+        "min_text_thickness": 0.15,
         "min_through_hole_diameter": 0.3,
         "min_track_width": 0.19999999999999998,
-        "min_via_annular_width": 0.09999999999999999,
-        "min_via_diameter": 0.6,
+        "min_via_annular_width": 0.19999999999999998,
+        "min_via_diameter": 0.7,
         "solder_mask_to_copper_clearance": 0.0,
         "use_height_for_length_calcs": true
       },
@@ -186,7 +186,7 @@
     "classes": [
       {
         "bus_width": 12,
-        "clearance": 0.2,
+        "clearance": 0.25,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -196,8 +196,25 @@
         "name": "Default",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.25,
+        "via_diameter": 0.7,
+        "via_drill": 0.3,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "HP_amp",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.2,
-        "via_diameter": 0.6,
+        "via_diameter": 0.7,
         "via_drill": 0.3,
         "wire_width": 6
       }
@@ -207,7 +224,48 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {
+        "netclass": "HP_amp",
+        "pattern": "+4V5A"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HPVDD"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HPVSS"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HP_CPN"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HP_CPP"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HP_EN"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HP_L_IN"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "HP_R_IN"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "PHONE_L"
+      },
+      {
+        "netclass": "HP_amp",
+        "pattern": "PHONE_R"
+      }
+    ]
   },
   "pcbnew": {
     "last_paths": {

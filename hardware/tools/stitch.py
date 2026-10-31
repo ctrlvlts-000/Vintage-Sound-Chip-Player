@@ -9,9 +9,11 @@ import sys
 import pcbnew
 
 P = sys.argv[1]
-STEP, VIA, DRILL, GAP = 8.0, 0.6, 0.3, 0.35          # mm
 b = pcbnew.LoadBoard(P)
 mm, to_mm = pcbnew.FromMM, pcbnew.ToMM
+nc = b.GetDesignSettings().m_NetSettings.m_DefaultNetClass
+STEP, GAP = 8.0, 0.35                                # mm
+VIA, DRILL = to_mm(nc.GetViaDiameter()), to_mm(nc.GetViaDrill())
 gnd = b.FindNet("GND")
 edge = b.GetBoardEdgesBoundingBox()
 x0, y0, x1, y1 = to_mm(edge.GetLeft()), to_mm(edge.GetTop()), to_mm(edge.GetRight()), to_mm(edge.GetBottom())
