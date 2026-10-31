@@ -1,4 +1,4 @@
-"""The YM2612 player Rev A schematic, described part by part. Run: python3 design.py ../ym2612_player"""
+"""The YM2612 player Rev B schematic, described part by part. Run: python3 design.py ../ym2612_player"""
 import os
 import sys
 
@@ -106,28 +106,28 @@ pico = {
 }
 for g in ["3", "8", "13", "18", "23", "28", "38"]:
     pico[g] = "GND"
-mc.add("ym2612:PicoPlus2", "U", "Pimoroni Pico Plus 2", 165.1, 139.7, pico,
+mc.add("ym2612:PicoPlus2", "U", "Pimoroni Pico Plus 2", 190.5, 139.7, pico,
        fields=f("ym2612:Pimoroni_PicoPlus2_Socketed", "PIM724",
                 "Joey supplies the Pico Plus 2 and solders 2x 20-pin male headers to it; it plugs into sockets U2-SKT"),
        dnp=True)
-cap(mc, "10uF", 241.3, 88.9, "+3V3", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U2", "36"))
-cap(mc, "100nF", 254, 88.9, "+3V3", near=("U2", "36"))
+cap(mc, "10uF", 223.52, 93.98, "+3V3", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U2", "36"))
+cap(mc, "100nF", 236.22, 93.98, "+3V3", near=("U2", "36"))
 # Keep the YM2612 quiet while the Pico boots: /IC held low (reset), /WR high, address lines low.
 # The pull-downs are 4.7k because of RP2350 erratum E9: a released pin can sit near 2.2 V unless an external
 # pull-down of 8.2k or less holds it.
-res(mc, "10k", 241.3, 190.5, "+3V3", "MCU_WR")
-res(mc, "4.7k", 254, 190.5, "MCU_IC", "GND")
-res(mc, "4.7k", 266.7, 190.5, "MCU_A0", "GND")
-res(mc, "4.7k", 279.4, 190.5, "MCU_A1", "GND")
+res(mc, "10k", 127, 160.02, "+3V3", "MCU_WR")
+res(mc, "4.7k", 139.7, 172.72, "MCU_IC", "GND")
+res(mc, "4.7k", 152.4, 172.72, "MCU_A0", "GND")
+res(mc, "4.7k", 165.1, 172.72, "MCU_A1", "GND")
 # Spare pins and test points.
-mc.add("Connector_Generic:Conn_01x04", "J", "Spare GPIO (not fitted)", 81.28, 205.74,
-       {"1": "+3V3", "2": "HP_EN", "3": "SPARE_GP13", "4": "GND"},
+mc.add("Connector_Generic:Conn_01x04", "J", "Spare GPIO (not fitted)", 101.6, 144.78,
+       {"1": "+3V3", "2": "HP_EN", "3": "SPARE_GP13", "4": "GND"}, rot=180,
        fields=f("Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"), dnp=True)
 tps = ["MCU_D0", "MCU_D1", "MCU_D2", "MCU_D3", "MCU_D4", "MCU_D5", "MCU_D6", "MCU_D7",
        "MCU_A0", "MCU_A1", "MCU_WR", "MCU_IC", "YM_CLK", "GND", "GND"]
 for i, net in enumerate(tps):
-    mc.add("Connector:TestPoint", "TP", net.replace("MCU_", ""), 297.18 + (i % 5) * 20.32, 76.2 + (i // 5) * 33.02,
-           {"1": net}, fields=f("TestPoint:TestPoint_Pad_D1.5mm"))
+    mc.add("Connector:TestPoint", "TP", net.replace("MCU_", ""), 297.18 + (i % 5) * 20.32, 101.6 + (i // 5) * 27.94,
+           {"1": net}, fields=f("TestPoint:TestPoint_Pad_D1.5mm"), labelled=True)
 mc.text(25.4, 25.4,
         "CONTROLLER: Pimoroni Pico Plus 2 (RP2350, 16 MB flash, 8 MB PSRAM, USB-C). It has parts underneath, so it plugs into two 20-pin sockets.\n"
         "Its USB-C port is the player's only power and data connector: put it on the rear edge of the board.\n"
@@ -139,9 +139,9 @@ mc.text(25.4, 25.4,
         "  GP27, GP28  data knob A / B\n"
         "  GP12     headphone amp enable (high = on), also on J1    GP13  spare, on J1 (not fitted)\n"
         "/RD is tied high and /CS low at the chip, so the bus only ever writes.", size=1.5)
-mc.text(228.6, 220.98,
+mc.text(101.6, 205.74,
         "Boot-time pulls: until the firmware starts, these hold the\nYM2612 in reset and keep /WR idle. 4.7k pull-downs: RP2350 erratum E9.", size=1.5)
-mc.text(292.1, 60.96, "Test points for the logic analyzer (milestone M1)", size=1.5)
+mc.text(292.1, 86.36, "Test points for the logic analyzer (milestone M1). They connect by name.", size=1.5)
 
 # =============================================================== sound chip
 sc = Sheet(P, "sound_chip.kicad_sch", "Sound chip")
@@ -150,43 +150,56 @@ b1 = {"1": "GND", "19": "GND", "10": "GND", "20": "+5V_YM"}
 for i in range(8):
     b1[str(2 + i)] = f"MCU_D{i}"
     b1[str(18 - i)] = f"YMB_D{i}"
-sc.add("74xx:74HCT541", "U", "74HCT541", 76.2, 81.28, b1,
+sc.add("74xx:74HCT541", "U", "74HCT541", 88.9, 96.52, b1,
        fields=f("Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm", "74HCT541D,653", "octal buffer, HCT, SOIC-20"))
+# Series resistors sit in line between each buffer output and its chip pin. The bus fans out to a 5.08 mm pitch and
+# back, and alternate resistors sit in two columns, so every reference and value has room.
 for i in range(8):
-    res(sc, "100", 127, 58.42 + i * 7.62, f"YMB_D{i}", f"YM_D{i}", sideways=True)
+    res(sc, "100", 127 + (i % 2) * 12.7, 63.5 + i * 5.08, f"YMB_D{i}", f"YM_D{i}", sideways=True)
 b2 = {"1": "GND", "19": "GND", "10": "GND", "20": "+5V_YM",
       "2": "MCU_A0", "3": "MCU_A1", "4": "MCU_WR", "5": "MCU_IC", "6": "MCU_CLK", "7": "GND", "8": "GND", "9": "GND",
       "18": "YMB_A0", "17": "YMB_A1", "16": "YMB_WR", "15": "YMB_IC", "14": "YMB_CLK", "13": "NC", "12": "NC", "11": "NC"}
-sc.add("74xx:74HCT541", "U", "74HCT541", 76.2, 165.1, b2,
-       fields=f("Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm", "74HCT541D,653", "octal buffer, HCT, SOIC-20"), stagger=True)
-for i, s in enumerate(["A0", "A1", "WR", "IC"]):
-    res(sc, "100", 127, 147.32 + i * 7.62, f"YMB_{s}", f"YM_{s}", sideways=True)
-# Clock: fit R14 for the Pico's clock (default) or R15 + X1 for an oscillator can. Never both.
-res(sc, "33", 127, 182.88, "YMB_CLK", "YM_CLK", sideways=True)
-res(sc, "33", 127, 213.36, "OSC_OUT", "YM_CLK", sideways=True, dnp=True)
-sc.add("Oscillator:CXO_DIP8", "X", "7.670454 MHz, 5V (not fitted)", 81.28, 220.98,
+sc.add("74xx:74HCT541", "U", "74HCT541", 88.9, 152.4, b2,
+       fields=f("Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm", "74HCT541D,653", "octal buffer, HCT, SOIC-20"))
+# Control lines climb from the second buffer to the chip, each through an upright resistor.
+for i, s_ in enumerate(["A0", "A1", "WR", "IC"]):
+    res(sc, "100", 114.3 + i * 10.16, 127, f"YM_{s_}", f"YMB_{s_}")
+# Clock: fit R17 for the Pico's clock (default) or R18 + X1 for an oscillator can. Never both.
+res(sc, "33", 154.94, 127, "YM_CLK", "YMB_CLK")
+# R18 turned so its YM_CLK end faces right, into open space for the net's label.
+sc.add(R, "R", "33", 162.56, 175.26, {"1": "YM_CLK", "2": "OSC_OUT"}, rot=270, fields=f(FP_R, spec="1%, 0603"), dnp=True)
+sc.add("Oscillator:CXO_DIP8", "X", "7.670454 MHz, 5V (not fitted)", 139.7, 175.26,
        {"1": "+5V_YM", "4": "GND", "5": "OSC_OUT", "8": "+5V_YM"},
        fields=f("Oscillator:Oscillator_DIP-8", "", "half-size DIP-8 oscillator can, 5V CMOS, 7.670454 MHz"), dnp=True)
+sc.label_at = {"YM_CLK": "R18"}
+# The data bus fans out from the buffer to the resistors and back in to the chip as two neat staircases.
+sc.paths = {}
+for i in range(8):
+    y, row = 83.82 + i * 2.54, 63.5 + i * 5.08
+    left, right = 123.19 + (i % 2) * 12.7, 130.81 + (i % 2) * 12.7
+    sc.paths[f"YMB_D{i}"] = [(101.6, y), (104.14 + 2.54 * i, y), (104.14 + 2.54 * i, row), (left, row)]
+    sc.paths[f"YM_D{i}"] = [(right, row), (175.26 - 2.54 * i, row), (175.26 - 2.54 * i, y), (177.8, y)]
 # The chip, in a turned-pin socket. Joey fits the YM2612.
 ym = {"2": "YM_D0", "3": "YM_D1", "4": "YM_D2", "5": "YM_D3", "6": "YM_D4", "7": "YM_D5", "8": "YM_D6", "9": "YM_D7",
       "17": "YM_A0", "18": "YM_A1", "14": "GND", "15": "YM_WR", "16": "+5V_YM", "11": "YM_IC", "24": "YM_CLK",
       "20": "YM_MOL", "21": "YM_MOR", "13": "NC", "10": "NC",
       "23": "+5V_YM", "22": "YM_AVCC", "1": "GND", "12": "GND", "19": "GND"}
-sc.add("ym2612:YM2612", "U", "YM2612 (socket only, chip fitted by hand)", 200.66, 111.76, ym,
+u5 = sc.add("ym2612:YM2612", "U", "YM2612 (socket only, chip fitted by hand)", 190.5, 101.6, ym,
        fields=f("Package_DIP:DIP-24_W15.24mm_Socket", "110-43-624-41-001000",
-                "Mill-Max 24-pin 600 mil turned-pin DIP socket. PCBWay fits the socket only."), stagger=True)
+                "Mill-Max 24-pin 600 mil turned-pin DIP socket. PCBWay fits the socket only."))
+u5.value_at = (27.94, 24.13)      # beside the ground pins, not across them
 # Window lights: two warm-white 3 mm LEDs, about 5 mA each, always on.
 for i in range(2):
-    res(sc, "430", 279.4 + i * 20.32, 76.2, "+5V", f"LED_WIN{i + 1}")
-    sc.add("Device:LED", "D", "warm white 3 mm", 279.4 + i * 20.32, 111.76, {"2": f"LED_WIN{i + 1}", "1": "GND"}, rot=90,
+    res(sc, "430", 256.54 + i * 30.48, 83.82, "+5V", f"LED_WIN{i + 1}")
+    sc.add("Device:LED", "D", "warm white 3 mm", 256.54 + i * 30.48, 99.06, {"2": f"LED_WIN{i + 1}", "1": "GND"}, rot=90,
            fields=f("LED_THT:LED_D3.0mm", "LED3WAW", "3 mm through-hole LED, warm white 2800K, 3.2V. Any 3 mm warm white will do. Order note for PCBWay: do not trim the leads, Joey bends them to aim the light"))
 for i, near in enumerate([("U3", "20"), ("U4", "20"), ("U5", "23"), ("X1", "8")]):
-    cap(sc, "100nF", 266.7 + i * 12.7, 180.34, "+5V_YM", near=near)
-cap(sc, "10uF", 330.2, 180.34, "+5V_YM", fp=FP_C0805, spec="X5R, 16V, 0805", near=("U5", "23"))
+    cap(sc, "100nF", 228.6 + i * 12.7, 144.78, "+5V_YM", near=near)
+cap(sc, "10uF", 279.4, 144.78, "+5V_YM", fp=FP_C0805, spec="X5R, 16V, 0805", near=("U5", "23"))
 # The chip's DAC supply (A.VCC, pin 22) gets its own RC filter: USB noise on +5V_YM would otherwise reach the audio.
-res(sc, "10", 355.6, 165.1, "+5V_YM", "YM_AVCC", sideways=True, spec="1%, 0603 (A.VCC filter)")
-cap(sc, "220uF", 368.3, 180.34, "YM_AVCC", polar=True, fp=FP_CP6, near=("U5", "22"))
-cap(sc, "100nF", 381, 180.34, "YM_AVCC", near=("U5", "22"))
+res(sc, "10", 208.28, 63.5, "+5V_YM", "YM_AVCC", spec="1%, 0603 (A.VCC filter)")
+cap(sc, "220uF", 220.98, 73.66, "YM_AVCC", polar=True, fp=FP_CP6, near=("U5", "22"))
+cap(sc, "100nF", 233.68, 73.66, "YM_AVCC", near=("U5", "22"))
 sc.text(25.4, 22.86,
         "SOUND CHIP: the YM2612 and the 3.3V to 5V buffers\n"
         "Two 74HCT541 buffers at 5V turn the Pico's 3.3V signals into solid 5V. 100 ohm resistors on every chip pin protect the YM2612.\n"
@@ -194,7 +207,7 @@ sc.text(25.4, 22.86,
         "Clock: the Pico makes 7.667 MHz on GP21 and the buffer lifts it to 5V (its 33 ohm resistor is fitted). For exact Genesis pitch,\n"
         "fit a 7.670454 MHz 5V oscillator can in X1 and its 33 ohm resistor, and leave out the buffer's 33 ohm.\n"
         "Window lights: D1 and D2 sit beside the socket, angled across the chip, so its markings catch the light.", size=1.5)
-sc.text(261.62, 193.04,
+sc.text(223.52, 157.48,
         "Decoupling: one 100nF at each 74HCT541, one at YM2612 VCC (pin 23) with 10uF bulk, one for X1.\n"
         "A.VCC (pin 22): 10 ohm + 220uF + 100nF filter, placed at pins 22 and 19.", size=1.5)
 
@@ -241,14 +254,14 @@ for side, ch, mo, y0 in [(0, "L", "YM_MOL", 110.49), (1, "R", "YM_MOR", 270.51)]
     # Ground-lift footprint: fit 0 ohm. If an interface hums, try 10 ohm here (milestone M4).
     res(au, "0", 363.22, y0 + 86.36, f"SLEEVE_{ch}", "GND", sideways=True, spec="0 ohm, 0603 (ground lift option)")
     # Headphones: DC block, volume slider (headphones only), 1uF into the TPA6132A2's inverting input.
-    yh = y0 - 48.26
-    au.add(CP, "C", "10uF", 175.26, yh, {"1": f"COLD_{ch}", "2": f"VOL_{ch}_IN"}, rot=90,
+    # The headphone chain sits between the two channels, on the right: L on top, R below, flowing left to right.
+    au.add(CP, "C", "10uF", 421.64, 210.82 + side * 7.62, {"1": f"COLD_{ch}", "2": f"VOL_{ch}_IN"}, rot=90,
            fields=f(FP_CP5, spec="electrolytic, 16V"))
     gang = {"1": "VOL_L_IN", "2": "VOL_L_W", "3": "GND"} if not side else {"4": "VOL_R_IN", "5": "VOL_R_W", "6": "GND"}
     if SLIDER_ON_BOARD:
         au.add("Device:R_Potentiometer_Dual_Separate", "RV", "10k audio, dual slide", 205.74, yh, gang, unit=1 + side,
                ref="RV1", fields=POT)
-    cap(au, "1uF", 243.84, yh, f"VOL_{ch}_W", f"HP_{ch}_IN", sideways=True, fp="Capacitor_SMD:C_1206_3216Metric",
+    cap(au, "1uF", 467.36, 215.9 - side * 7.62, f"VOL_{ch}_W", f"HP_{ch}_IN", sideways=True, fp="Capacitor_SMD:C_1206_3216Metric",
         spec="X7R, 25V, 1206")
 # TPA6132A2 headphone amp on the quiet 4.5V rail. Its outputs sit at 0V (charge pump), so no output capacitors.
 # Gain -6 dB (G0 = G1 = low): the filter's full 4.3 Vpp in gives 2.15 Vpp out, inside its swing into 32 ohm.
@@ -256,23 +269,24 @@ for side, ch, mo, y0 in [(0, "L", "YM_MOL", 110.49), (1, "R", "YM_MOR", 270.51)]
 tpa = {"1": "HP_L_IN", "2": "GND", "3": "GND", "4": "HP_R_IN", "5": "PHONE_R", "6": "GND", "7": "GND",
        "8": "HPVSS", "9": "HP_CPN", "10": "GND", "11": "HP_CPP", "12": "HPVDD", "13": "HP_EN", "14": "+4V5A",
        "15": "GND", "16": "PHONE_L", "17": "GND"}
-au.add("Amplifier_Audio:TPA6132A2RTE", "U", "TPA6132A2RTER", 480.06, 101.6, tpa, ref="U8", fields=TPA)
+au.add("Amplifier_Audio:TPA6132A2RTE", "U", "TPA6132A2RTER", 505.46, 215.9, tpa, ref="U8", fields=TPA)
 P.counters["U"] = 8
-cap(au, "2.2uF", 457.2, 139.7, "+4V5A", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U8", "14"))
-cap(au, "100nF", 469.9, 139.7, "+4V5A", near=("U8", "14"))
-cap(au, "2.2uF", 482.6, 139.7, "HPVDD", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U8", "12"))
-cap(au, "2.2uF", 495.3, 139.7, "HPVSS", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U8", "8"))
-cap(au, "1uF", 508, 139.7, "HP_CPP", "HP_CPN", fp=FP_C0805, spec="X5R, 10V, 0805 (charge-pump flying cap)", near=("U8", "11"))
-res(au, "4.7k", 520.7, 139.7, "HP_EN", "GND")
-flag(au, 482.6, 154.94, "HPVDD")
-flag(au, 495.3, 154.94, "HPVSS")
+cap(au, "2.2uF", 474.98, 251.46, "+4V5A", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U8", "14"))
+cap(au, "100nF", 487.68, 251.46, "+4V5A", near=("U8", "14"))
+cap(au, "2.2uF", 528.32, 193.04, "HPVDD", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U8", "12"))
+cap(au, "2.2uF", 513.08, 251.46, "HPVSS", fp=FP_C0805, spec="X5R, 10V, 0805", near=("U8", "8"))
+cap(au, "1uF", 525.78, 251.46, "HP_CPP", "HP_CPN", fp=FP_C0805, spec="X5R, 10V, 0805 (charge-pump flying cap)", near=("U8", "11"))
+res(au, "4.7k", 538.48, 251.46, "HP_EN", "GND")
+flag(au, 518.16, 187.96, "HPVDD")
+au.label_at = {"HP_EN": "R42"}
+flag(au, 520.7, 240.03, "HPVSS")
 if not SLIDER_ON_BOARD:
-    au.add("Connector_Generic:Conn_01x06", "J", "Volume slider (dual 10k audio taper, in the case)", 205.74, 160.02,
+    au.add("Connector_Generic:Conn_01x06", "J", "Volume slider (dual 10k audio taper, in the case)", 444.5, 215.9,
            {"1": "VOL_L_IN", "2": "VOL_L_W", "3": "GND", "4": "VOL_R_IN", "5": "VOL_R_W", "6": "GND"},
            fields=f("Connector_JST:JST_XH_B6B-XH-A_1x06_P2.50mm_Vertical", "B6B-XH-A(LF)(SN)",
                     "JST XH 6-pin header. Wire a dual 10k audio-taper slide pot: L top/wiper/bottom on 1-3, R on 4-6."),
            stagger=True)
-au.add("Connector_Audio:AudioJack3", "J", "3.5 mm headphones (front)", 426.72, 101.6,
+au.add("Connector_Audio:AudioJack3", "J", "3.5 mm headphones (front)", 553.72, 215.9,
        {"T": "PHONE_L", "R": "PHONE_R", "S": "GND"},
        fields=f("Connector_Audio:Jack_3.5mm_CUI_SJ1-3523N_Horizontal", "SJ1-3523N", "CUI 3.5 mm stereo jack, horizontal"))
 au.add("Amplifier_Operational:OPA2340", "U", "OPA2350UA", 60.96, 375.92, {"8": "+4V5A", "4": "GND"}, unit=3, ref="U6", fields=OPA)
@@ -335,8 +349,9 @@ if __name__ == "__main__":
     for p in probs:
         print("PROBLEM:", p)
     P.root_notes = ("How to read this schematic\n"
-                    "Each box is a page. Wires end in name tags (labels): any two tags with the same name are connected,\n"
-                    "even on different pages. The symbols marked +5V, +5V_YM, +4V5A, +3V3 and GND are power connections.\n"
+                    "Each box is a page. Green lines are wires. A signal that goes to another page ends in a name tag:\n"
+                    "tags with the same name are connected, even on different pages. A small text on a wire names it.\n"
+                    "The symbols marked +5V, +5V_YM, +4V5A, +3V3 and GND are power connections.\n"
                     "Parts marked DNP are not fitted by PCBWay. Pages: Power > Controller > Sound chip > Audio out > Front panel.")
     P.write(OUT)
     print("wrote", OUT, "problems:", len(probs))

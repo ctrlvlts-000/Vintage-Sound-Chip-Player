@@ -39,9 +39,11 @@ The files are saved in KiCad 7 format. Newer KiCad opens them and offers to upgr
 If you'd rather keep working in your own **YM2612 player** project, copy these files into it, or ask Claude to do it
 through folder access.
 
-**Reading the drawing:** wires end in name tags (labels). Any two tags with the same name are connected, even on
-different pages. `+5V`, `+5V_YM`, `+4V5A`, `+3V3` and `GND` are power connections. A blue X means "not
-connected on purpose". A part crossed out in red is "do not fit": it has a footprint but PCBWay leaves it off.
+**Reading the drawing:** green lines are wires, drawn part to part (Rev B; Rev A used name tags only). A signal that
+goes to another page ends in a name tag (label): tags with the same name are connected, even on different pages. A
+small name on a wire is just that wire's name. `+5V`, `+5V_YM`, `+4V5A`, `+3V3` and `GND` are power connections. A
+blue X means "not connected on purpose". A part crossed out in red is "do not fit": it has a footprint but PCBWay
+leaves it off. The test points on the Controller page still connect by name, like probes.
 
 ## Pages
 
@@ -126,7 +128,7 @@ the volume slider and its cable.
 
 ## Regenerating
 
-`tools/build.sh` rebuilds the schematic from `tools/design.py`, checks every connection against the netlist, and
+`tools/build.sh` rebuilds the schematic from `tools/design.py` (`tools/wires.py` draws the wires), checks every connection against the netlist, and
 re-exports the PDF and BOM (needs KiCad installed). Once anyone edits the schematic in KiCad, the KiCad files become
 the real source and the script should not be rerun.
 
