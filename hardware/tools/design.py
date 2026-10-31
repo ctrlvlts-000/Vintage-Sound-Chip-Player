@@ -200,6 +200,7 @@ cap(sc, "10uF", 279.4, 144.78, "+5V_YM", fp=FP_C0805, spec="X5R, 16V, 0805", nea
 res(sc, "10", 208.28, 63.5, "+5V_YM", "YM_AVCC", spec="1%, 0603 (A.VCC filter)")
 cap(sc, "220uF", 220.98, 73.66, "YM_AVCC", polar=True, fp=FP_CP6, near=("U5", "22"))
 cap(sc, "100nF", 233.68, 73.66, "YM_AVCC", near=("U5", "22"))
+flag(sc, 226.06, 64.77, "YM_AVCC")      # ERC: the filtered A.VCC rail is fed through R21, mark it as a supply
 sc.text(25.4, 22.86,
         "SOUND CHIP: the YM2612 and the 3.3V to 5V buffers\n"
         "Two 74HCT541 buffers at 5V turn the Pico's 3.3V signals into solid 5V. 100 ohm resistors on every chip pin protect the YM2612.\n"
