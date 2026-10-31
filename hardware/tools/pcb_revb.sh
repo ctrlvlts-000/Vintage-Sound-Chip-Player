@@ -14,5 +14,6 @@ python3 stitch.py $PCB                       # 8 mm grid of vias tying the two p
 python3 gndvia.py $PCB                       # any plane island the stitching didn't reach
 python3 patch_route.py $PCB C36.2:U7.4 C1.2:C2.2      # two islands with no room for a via of their own
 python3 miter.py $PCB                        # 90 degree corners become two 45 degree bends
+python3 logo.py                              # [-] CTRLVLTS [+] above the buttons
 python3 silk.py $PCB                         # outlines off pads, labels 1.0 mm in clear spots
 sh fab.sh

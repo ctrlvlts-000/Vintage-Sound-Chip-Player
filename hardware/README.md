@@ -18,6 +18,7 @@ Same circuit, same part positions (the case and 3D model still fit). What change
 | Ground traces | 271 ground track pieces, 917 mm, mostly on top of the ground plane | Ground left to the planes. 20 short pieces (49 mm in all) remain where a pad needs one: chip pins onto U8's exposed pad, and pads in small pieces of plane joined to a via |
 | Right angles | 66 corners at 90 degrees, 1 sharper | none in open track (43 cut into two 45 degree bends by `tools/miter.py`); the few left sit inside a pad or via |
 | Silkscreen | 0.8 mm labels, 95 DRC warnings, 40 labels on a neighbouring part | 1.0 mm labels with a 0.15 mm stroke, none on a pad, part, other label or edge. 24 labels with no clear spot moved to the assembly (F.Fab) layer. Outlines trimmed where stock footprints drew them through pads (the 12 mm buttons). The Gerbers also cut silkscreen away from every pad |
+| Logo | none | `[-] CTRLVLTS [+]` on the front silkscreen, above the buttons |
 | Pad sizes | KiCad's standard footprints, IPC-7351B nominal | unchanged: these already include the IPC solder fillet margins |
 
 **Just want to look?** Open [ym2612_player/ym2612_player.pdf](ym2612_player/ym2612_player.pdf). GitHub shows it in the browser.
