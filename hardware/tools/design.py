@@ -161,13 +161,14 @@ b2 = {"1": "GND", "19": "GND", "10": "GND", "20": "+5V_YM",
       "18": "YMB_A0", "17": "YMB_A1", "16": "YMB_WR", "15": "YMB_IC", "14": "YMB_CLK", "13": "NC", "12": "NC", "11": "NC"}
 sc.add("74xx:74HCT541", "U", "74HCT541", 88.9, 152.4, b2,
        fields=f("Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm", "74HCT541D,653", "octal buffer, HCT, SOIC-20"))
-# Control lines climb from the second buffer to the chip, each through an upright resistor.
+# Control lines climb from the second buffer to the chip, each through an upright resistor (pin 1 at the buffer
+# end, as on the board).
 for i, s_ in enumerate(["A0", "A1", "WR", "IC"]):
-    res(sc, "100", 114.3 + i * 10.16, 127, f"YM_{s_}", f"YMB_{s_}")
+    sc.add(R, "R", "100", 114.3 + i * 10.16, 127, {"1": f"YMB_{s_}", "2": f"YM_{s_}"}, rot=180, fields=f(FP_R, spec="1%, 0603"))
 # Clock: fit R17 for the Pico's clock (default) or R18 + X1 for an oscillator can. Never both.
-res(sc, "33", 154.94, 127, "YM_CLK", "YMB_CLK")
-# R18 turned so its YM_CLK end faces right, into open space for the net's label.
-sc.add(R, "R", "33", 162.56, 175.26, {"1": "YM_CLK", "2": "OSC_OUT"}, rot=270, fields=f(FP_R, spec="1%, 0603"), dnp=True)
+sc.add(R, "R", "33", 154.94, 127, {"1": "YMB_CLK", "2": "YM_CLK"}, rot=180, fields=f(FP_R, spec="1%, 0603"))
+# R18 lies with its YM_CLK end facing right, into open space for the net's label.
+sc.add(R, "R", "33", 162.56, 175.26, {"1": "OSC_OUT", "2": "YM_CLK"}, rot=90, fields=f(FP_R, spec="1%, 0603"), dnp=True)
 sc.add("Oscillator:CXO_DIP8", "X", "7.670454 MHz, 5V (not fitted)", 139.7, 175.26,
        {"1": "+5V_YM", "4": "GND", "5": "OSC_OUT", "8": "+5V_YM"},
        fields=f("Oscillator:Oscillator_DIP-8", "", "half-size DIP-8 oscillator can, 5V CMOS, 7.670454 MHz"), dnp=True)
