@@ -4,3 +4,5 @@ __pycache__/
 fp-info-cache
 _autosave-*
 *.lck
+fab/gerbers/
+logs/

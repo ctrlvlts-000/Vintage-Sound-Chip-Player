@@ -1,0 +1,5 @@
+(version 1)
+# The headphone amp U8 is a 3 x 3 mm QFN with 0.5 mm pin pitch: its own pads sit 0.2 mm apart by design.
+(rule "U8 fine pitch"
+  (condition "A.insideCourtyard('U8') && B.insideCourtyard('U8')")
+  (constraint clearance (min 0.2mm)))
