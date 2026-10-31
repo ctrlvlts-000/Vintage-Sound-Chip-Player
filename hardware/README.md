@@ -1,19 +1,30 @@
-# YM2612 player hardware (Rev A)
+# YM2612 player hardware (Rev B)
 
-The Rev A board, drawn in KiCad. It follows [docs/DESIGN.md](../docs/DESIGN.md). The goal is a
+The Rev B board, drawn in KiCad. It follows [docs/DESIGN.md](../docs/DESIGN.md). The goal is a
 **PCBWay turnkey prototype**: PCBWay makes the board, buys the parts and solders them on. Joey supplies
 the YM2612 and plugs it into the socket.
 
-**Status:** second layout, with the fixes from the Oct 25 review (fix register F1 to F17). Checked in KiCad 7 in the
-cloud: DRC 0 errors and 0 unconnected pads (only silkscreen warnings), every PCB pad matches the schematic netlist,
-no YM2612 bus or clock track in the audio corner. ERC and a final DRC still need running in KiCad 10. Not ordered
-yet: see "Still to do before ordering".
+**Status:** Rev B, the Rev A circuit and part positions re-routed after the Oct 30 peer review (see "Rev B changes").
+Checked in KiCad 7 in the cloud: DRC 0 errors, 0 unconnected pads and 0 silkscreen warnings. ERC and a final DRC
+still need running in KiCad 10. Not ordered yet: see "Still to do before ordering".
+
+## Rev B changes (peer review, Oct 30)
+
+Same circuit, same part positions (the case and 3D model still fit). What changed on the board:
+
+| Review point | Rev A | Rev B |
+| --- | --- | --- |
+| Clearances | 0.20 mm tracks and gaps, routed right at the limit; vias 0.6 / 0.3 mm (0.15 mm ring, PCBWay's minimum) | 0.25 mm tracks and gaps; vias 0.7 / 0.3 mm (0.2 mm ring). Only the headphone amp's own 0.5 mm-pitch pins keep 0.2 mm (`HP_amp` net class and `ym2612_player.kicad_dru`) |
+| Ground traces | 271 ground track pieces, 917 mm, mostly on top of the ground plane | Ground left to the planes. 20 short pieces (49 mm in all) remain where a pad needs one: chip pins onto U8's exposed pad, and pads in small pieces of plane joined to a via |
+| Right angles | 66 corners at 90 degrees, 1 sharper | none in open track (43 cut into two 45 degree bends by `tools/miter.py`); the few left sit inside a pad or via |
+| Silkscreen | 0.8 mm labels, 95 DRC warnings, 40 labels on a neighbouring part | 1.0 mm labels with a 0.15 mm stroke, none on a pad, part, other label or edge. 24 labels with no clear spot moved to the assembly (F.Fab) layer. Outlines trimmed where stock footprints drew them through pads (the 12 mm buttons). The Gerbers also cut silkscreen away from every pad |
+| Pad sizes | KiCad's standard footprints, IPC-7351B nominal | unchanged: these already include the IPC solder fillet margins |
 
 **Just want to look?** Open [ym2612_player/ym2612_player.pdf](ym2612_player/ym2612_player.pdf). GitHub shows it in the browser.
 The parts list is [ym2612_player/bom.csv](ym2612_player/bom.csv).
 The board, seen from the top:
 
-![Rev A board, top view](ym2612_player/board_top.png)
+![Rev B board, top view](ym2612_player/board_top.png)
 
 ## Opening it in KiCad
 
@@ -118,6 +129,9 @@ the volume slider and its cable.
 `tools/build.sh` rebuilds the schematic from `tools/design.py`, checks every connection against the netlist, and
 re-exports the PDF and BOM (needs KiCad installed). Once anyone edits the schematic in KiCad, the KiCad files become
 the real source and the script should not be rerun.
+
+Rev B: `tools/pcb_revb.sh` lists the steps that turned the Rev A placement into this layout (rules, Freerouting
+without GND, ground vias and stitching, 45 degree corners, silkscreen, fab files).
 
 `tools/layout.py` places the parts on the board (decoupling capacitors go to the pin named in `design.NEAR`),
 `tools/route.py` routes it with Freerouting, `tools/stitch.py` adds the ground stitching vias, `tools/silk.py` moves

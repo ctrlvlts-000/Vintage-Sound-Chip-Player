@@ -1,8 +1,9 @@
 """Routes the board with Freerouting, then fills the ground planes.
 
 Run: python3 route.py ../ym2612_player/ym2612_player.kicad_pcb /path/to/freerouting.jar
-Ground planes are taken out while Freerouting runs (it would treat them as solid copper), so it routes every net,
-GND included, as tracks. The planes go back in afterwards and join up with those tracks.
+Ground planes are taken out while Freerouting runs (it would treat them as solid copper). GND is left out of the
+routing too: the planes carry it, so GND tracks would only duplicate them. gndvia.py then gives any GND pad the planes
+can't reach its own via. Clearance and via size come from the project's Default net class.
 """
 import os
 import re
@@ -14,7 +15,8 @@ import pcbnew
 
 PCB, JAR = sys.argv[1], sys.argv[2]
 # +4V5A stays at 250 um so it can reach the TPA6132A2's 0.25 mm QFN pads.
-POWER = {"GND": 500, "+5V": 500, "+5V_YM": 400, "+4V5A": 250, "+3V3": 400}
+SKIP = {"GND"}
+POWER = {"+5V": 500, "+5V_YM": 400, "+4V5A": 250, "+3V3": 400}
 
 def import_ses(board, path):
     """Adds Freerouting's tracks and vias to the board. (KiCad's own SES import needs the GUI.)"""
@@ -43,14 +45,16 @@ def import_ses(board, path):
             elif item[0] == "via":
                 v = pcbnew.PCB_VIA(board)
                 v.SetPosition(pcbnew.VECTOR2I(int(float(item[2]) * scale), -int(float(item[3]) * scale)))
-                v.SetWidth(pcbnew.FromMM(0.6))
-                v.SetDrill(pcbnew.FromMM(0.3))
+                v.SetWidth(ds.GetViaDiameter())
+                v.SetDrill(ds.GetViaDrill())
                 v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
                 v.SetNet(ni)
                 board.Add(v)
 
 
 board = pcbnew.LoadBoard(PCB)
+ds = board.GetDesignSettings().m_NetSettings.m_DefaultNetClass
+CLEAR = pcbnew.ToMM(ds.GetClearance()) * 1000 + 0.1  # um, just over the rule so DRC never sees it exact
 tmp = tempfile.mkdtemp()
 dsn, ses = os.path.join(tmp, "board.dsn"), os.path.join(tmp, "board.ses")
 
@@ -59,17 +63,26 @@ for z in zones:
     board.Remove(z)
 assert pcbnew.ExportSpecctraDSN(board, dsn)
 
-# Power nets get their own class with wider tracks (widths in um, the DSN's unit).
+# Power nets get their own class with wider tracks (widths in um, the DSN's unit), keeping the clearance of the net
+# class they came from. GND leaves every class.
 text = open(dsn).read()
-m = re.search(r'\(class kicad_default ""(.*?)\(circuit', text, re.S)
-names = m.group(1).split()
-keep = [n for n in names if n.strip('"') not in POWER]
-text = text.replace(m.group(0), '(class kicad_default "" ' + " ".join(keep) + "\n      (circuit", 1)
+via = re.search(r'\(via "(Via\[0-1\]_\d+:\d+_um)"\)', text).group(1)
+power_clear = {}
+for m in list(re.finditer(r'\(class (\S+)(?: "")?(.*?)\(circuit.*?\(clearance ([\d.]+)\)', text, re.S)):
+    names = m.group(2).split()
+    for n in names:
+        if n.strip('"') in POWER:
+            power_clear[n.strip('"')] = float(m.group(3))
+    keep = [n for n in names if n.strip('"') not in POWER and n.strip('"') not in SKIP]
+    head = m.group(0)[:m.group(0).index("(circuit")]
+    text = text.replace(head, f'(class {m.group(1)} "" ' + " ".join(keep) + "\n      ", 1)
 cls = ""
 for net, w in POWER.items():
-    cls += (f'    (class pwr_{net.strip("+")} "{net}"\n      (circuit\n        (use_via Via[0-1]_600:300_um)\n      )\n'
-            f'      (rule\n        (width {w})\n        (clearance 200.1)\n      )\n    )\n')
+    cls += (f'    (class pwr_{net.strip("+")} "{net}"\n      (circuit\n        (use_via {via})\n      )\n'
+            f'      (rule\n        (width {w})\n        (clearance {power_clear.get(net, CLEAR):.1f})\n      )\n    )\n')
 text = re.sub(r'(\n  \)\n  \(wiring)', "\n" + cls.rstrip("\n") + r"\1", text, count=1)
+for net in SKIP:  # drop the net itself, so Freerouting treats its pads as plain obstacles
+    text = re.sub(r'\n    \(net "?%s"?\n.*?\n    \)' % re.escape(net), "", text, count=1, flags=re.S)
 open(dsn, "w").write(text)
 
 if len(sys.argv) > 3:
