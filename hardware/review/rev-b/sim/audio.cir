@@ -1,0 +1,40 @@
+* Rev B left channel audio path, as drawn
+.include opamp.inc
+.param vin_ac=1
+V45 v45 0 4.5
+VMOL mol_src 0 DC 2.0 AC {vin_ac} SIN(2.0 {amp} {f0})
+.param amp=0.5 f0=1k
+* chip output impedance assumed 1k (unknown) into 2.2k load
+Rsrc mol_src mol 1k
+R22 mol 0 2.2k
+C17 mol fl_in 1u
+R23 fl_in fl_sum 47k
+R24 fl_sum cold 100k
+C18 fl_sum cold 470p
+XU6A vref fl_sum cold v45 0 OPA
+R25 cold inv 10k
+R26 inv hot 10k
+XU7A vref inv hot v45 0 OPA
+R43 v45 vref 10k
+R44 vref 0 10k
+C37 vref 0 47u
+C38 vref 0 100n
+* outputs
+R27 hot hot_r 100
+C19 hot_r hot_out 10u
+R28 hot_out 0 100k
+R29 cold cold_r 100
+C20 cold_r cold_out 10u
+R30 cold_out 0 100k
+* interface balanced input 10k per leg
+Rih hot_out 0 10k
+Ric cold_out 0 10k
+* headphone branch: pot at max (top), pot 10k, TPA input 26.4k, gain -6dB
+C21 cold vol_in 10u
+Rpot vol_in 0 10k
+C22 vol_in hp_in 1u
+Rtpa hp_in 0 26.4k
+Ehp hp_out 0 hp_in 0 -0.5
+Rload hp_out 0 32
+Ediff diff 0 hot_out cold_out 1
+.end
