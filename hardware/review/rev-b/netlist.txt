@@ -1,0 +1,261 @@
+== COMPONENTS
+C1 47uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+C2 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C3 47uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+C4 22uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C5 47uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+C6 4.7uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C7 47uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+FB1 220R@100MHz Inductor_SMD:L_0603_1608Metric BLM18PG221SN1D ferrite bead, 0603, 1A+ 
+FB2 220R@100MHz Inductor_SMD:L_0603_1608Metric BLM18PG221SN1D ferrite bead, 0603, 1A+ 
+H1 M3 MountingHole:MountingHole_3.2mm_M3   
+H2 M3 MountingHole:MountingHole_3.2mm_M3   
+H3 M3 MountingHole:MountingHole_3.2mm_M3   
+H4 M3 MountingHole:MountingHole_3.2mm_M3   
+H5 M3 (LCD) MountingHole:MountingHole_3.2mm_M3   
+H6 M3 (LCD) MountingHole:MountingHole_3.2mm_M3   
+H7 M3 (LCD) MountingHole:MountingHole_3.2mm_M3   
+H8 M3 (LCD) MountingHole:MountingHole_3.2mm_M3   
+L1 10uH Inductor_SMD:L_1210_3225Metric LQH32CN100K53L 10uH, 1210, 300mA+ 
+U1 LP5907MFX-4.5 Package_TO_SOT_SMD:SOT-23-5 LP5907MFX-4.5/NOPB low-noise LDO, 4.5V, 250mA 
+C8 10uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C9 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+J1 Spare GPIO (not fitted) Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical   DNP
+R1 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R2 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R3 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R4 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+TP1 D0 TestPoint:TestPoint_Pad_D1.5mm   
+TP2 D1 TestPoint:TestPoint_Pad_D1.5mm   
+TP3 D2 TestPoint:TestPoint_Pad_D1.5mm   
+TP4 D3 TestPoint:TestPoint_Pad_D1.5mm   
+TP5 D4 TestPoint:TestPoint_Pad_D1.5mm   
+TP6 D5 TestPoint:TestPoint_Pad_D1.5mm   
+TP7 D6 TestPoint:TestPoint_Pad_D1.5mm   
+TP8 D7 TestPoint:TestPoint_Pad_D1.5mm   
+TP9 A0 TestPoint:TestPoint_Pad_D1.5mm   
+TP10 A1 TestPoint:TestPoint_Pad_D1.5mm   
+TP11 WR TestPoint:TestPoint_Pad_D1.5mm   
+TP12 IC TestPoint:TestPoint_Pad_D1.5mm   
+TP13 YM_CLK TestPoint:TestPoint_Pad_D1.5mm   
+TP14 GND TestPoint:TestPoint_Pad_D1.5mm   
+TP15 GND TestPoint:TestPoint_Pad_D1.5mm   
+U2 Pimoroni Pico Plus 2 ym2612:Pimoroni_PicoPlus2_Socketed PIM724 Joey supplies the Pico Plus 2 and solders 2x 20-pin male headers to it; it plugs into sockets U2-SKT DNP
+C10 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C11 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C12 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C13 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C14 10uF Capacitor_SMD:C_0805_2012Metric  X5R, 16V, 0805 
+C15 220uF Capacitor_SMD:CP_Elec_6.3x7.7  electrolytic, 16V 
+C16 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+D1 warm white 3 mm LED_THT:LED_D3.0mm LED3WAW 3 mm through-hole LED, warm white 2800K, 3.2V. Any 3 mm warm white will do. Order note for PCBWay: do not trim the leads, Joey bends them to aim the light 
+D2 warm white 3 mm LED_THT:LED_D3.0mm LED3WAW 3 mm through-hole LED, warm white 2800K, 3.2V. Any 3 mm warm white will do. Order note for PCBWay: do not trim the leads, Joey bends them to aim the light 
+R5 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R6 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R7 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R8 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R9 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R10 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R11 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R12 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R13 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R14 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R15 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R16 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R17 33 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R18 33 Resistor_SMD:R_0603_1608Metric  1%, 0603 DNP
+R19 430 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R20 430 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R21 10 Resistor_SMD:R_0603_1608Metric  1%, 0603 (A.VCC filter) 
+U3 74HCT541 Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm 74HCT541D,653 octal buffer, HCT, SOIC-20 
+U4 74HCT541 Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm 74HCT541D,653 octal buffer, HCT, SOIC-20 
+U5 YM2612 (socket only, chip fitted by hand) Package_DIP:DIP-24_W15.24mm_Socket 110-43-624-41-001000 Mill-Max 24-pin 600 mil turned-pin DIP socket. PCBWay fits the socket only. 
+X1 7.670454 MHz, 5V (not fitted) Oscillator:Oscillator_DIP-8  half-size DIP-8 oscillator can, 5V CMOS, 7.670454 MHz DNP
+C17 1uF Capacitor_SMD:C_1206_3216Metric  X7R, 50V, 1206 
+C18 470pF Capacitor_SMD:C_0603_1608Metric  C0G, 50V 
+C19 10uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V, low-leakage 
+C20 10uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V, low-leakage 
+C21 10uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+C22 1uF Capacitor_SMD:C_1206_3216Metric  X7R, 25V, 1206 
+C23 1uF Capacitor_SMD:C_1206_3216Metric  X7R, 50V, 1206 
+C24 470pF Capacitor_SMD:C_0603_1608Metric  C0G, 50V 
+C25 10uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V, low-leakage 
+C26 10uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V, low-leakage 
+C27 10uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+C28 1uF Capacitor_SMD:C_1206_3216Metric  X7R, 25V, 1206 
+C29 2.2uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C30 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C31 2.2uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C32 2.2uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C33 1uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 (charge-pump flying cap) 
+C34 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C35 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C36 10uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C37 47uF Capacitor_SMD:CP_Elec_5x5.4  electrolytic, 16V 
+C38 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+J2 1/4" TRS balanced out L Connector_Audio:Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal NMJ6HCD2 Neutrik 1/4in stereo jack, horizontal PCB. The footprint's SN pad is left unconnected. 
+J3 1/4" TRS balanced out R Connector_Audio:Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal NMJ6HCD2 Neutrik 1/4in stereo jack, horizontal PCB. The footprint's SN pad is left unconnected. 
+J4 Volume slider (dual 10k audio taper, in the case) Connector_JST:JST_XH_B6B-XH-A_1x06_P2.50mm_Vertical B6B-XH-A(LF)(SN) JST XH 6-pin header. Wire a dual 10k audio-taper slide pot: L top/wiper/bottom on 1-3, R on 4-6. 
+J5 3.5 mm headphones (front) Connector_Audio:Jack_3.5mm_CUI_SJ1-3523N_Horizontal SJ1-3523N CUI 3.5 mm stereo jack, horizontal 
+R22 2.2k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R23 47k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R24 100k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R25 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R26 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R27 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R28 100k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R29 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R30 100k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R31 0 Resistor_SMD:R_0603_1608Metric  0 ohm, 0603 (ground lift option) 
+R32 2.2k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R33 47k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R34 100k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R35 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R36 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R37 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R38 100k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R39 100 Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R40 100k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R41 0 Resistor_SMD:R_0603_1608Metric  0 ohm, 0603 (ground lift option) 
+R42 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R43 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R44 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+U6 OPA2350UA Package_SO:SOIC-8_3.9x4.9mm_P1.27mm OPA2350UA dual rail-to-rail op-amp, 2.7-5.5V 
+U7 OPA2350UA Package_SO:SOIC-8_3.9x4.9mm_P1.27mm OPA2350UA dual rail-to-rail op-amp, 2.7-5.5V 
+U8 TPA6132A2RTER Package_DFN_QFN:WQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm TPA6132A2RTER TI DirectPath stereo headphone amp, 2.3-5.5V, WQFN-16 3x3 mm (RTE) 
+C39 10nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C40 10nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+C41 10uF Capacitor_SMD:C_0805_2012Metric  X5R, 10V, 0805 
+C42 100nF Capacitor_SMD:C_0603_1608Metric  X7R, 16V 
+J6 LCD (I2C backpack: GND, VCC, SDA, SCL) Connector_JST:JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical B4B-XH-A(LF)(SN) JST XH 4-pin header 
+Q1 BSS138 Package_TO_SOT_SMD:SOT-23 BSS138 N-MOSFET, SOT-23 
+Q2 BSS138 Package_TO_SOT_SMD:SOT-23 BSS138 N-MOSFET, SOT-23 
+R45 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R46 10k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R47 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R48 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R49 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+R50 4.7k Resistor_SMD:R_0603_1608Metric  1%, 0603 
+SW1 Play (red cap) Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW2 Stop Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW3 Left Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW4 Right Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW5 Edit Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW6 Exit Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW7 Write Button_Switch_THT:SW_PUSH-12mm B3F-4055 Omron 12 mm tactile switch, 7.3 mm tall, with a B32-series snap-on round cap 
+SW8 Data knob Rotary_Encoder:RotaryEncoder_Alps_EC11E_Vertical_H20mm PEC11R-4215F-N0024 Bourns 24-step encoder, no push switch, 15 mm shaft (EC11 footprint) 
+== NETS
++3V3 : C8.1() C9.1() J1.1(Pin_1) Q1.1(G) Q2.1(G) R1.1() R45.1() R46.1() R47.1() R49.1() U2.36(3V3)
++4V5A : C29.1() C30.1() C34.1() C35.1() C36.1() C6.1() C7.1() R43.1() U1.5(OUT) U6.8(V+) U7.8(V+) U8.14(VDD)
++5V : C3.1() C41.1() C42.1() FB1.1() FB2.1() J6.2(Pin_2) R19.1() R20.1() R48.1() R50.1() U2.40(VBUS)
++5V_YM : C1.1() C10.1() C11.1() C12.1() C13.1() C14.1() C2.1() FB1.2() R21.1() U3.20(VCC) U4.20(VCC) U5.16(~{RD}) U5.23(VCC) X1.1(EN) X1.8(Vcc)
+/Audio out/COLD_L : C18.2() C21.1() R24.2() R25.1() R29.1() U6.1()
+/Audio out/COLD_L_OUT : C20.2() J2.R() R30.1()
+/Audio out/COLD_L_R : C20.1() R29.2()
+/Audio out/COLD_R : C24.2() C27.1() R34.2() R35.1() R39.1() U6.7()
+/Audio out/COLD_R_OUT : C26.2() J3.R() R40.1()
+/Audio out/COLD_R_R : C26.1() R39.2()
+/Audio out/FL_IN : C17.2() R23.1()
+/Audio out/FL_SUM : C18.1() R23.2() R24.1() U6.2(-)
+/Audio out/FR_IN : C23.2() R33.1()
+/Audio out/FR_SUM : C24.1() R33.2() R34.1() U6.6(-)
+/Audio out/HOT_L : R26.2() R27.1() U7.1()
+/Audio out/HOT_L_OUT : C19.2() J2.T() R28.1()
+/Audio out/HOT_L_R : C19.1() R27.2()
+/Audio out/HOT_R : R36.2() R37.1() U7.7()
+/Audio out/HOT_R_OUT : C25.2() J3.T() R38.1()
+/Audio out/HOT_R_R : C25.1() R37.2()
+/Audio out/HPVDD : C31.1() U8.12(HPVDD)
+/Audio out/HPVSS : C32.1() U8.8(HPVSS)
+/Audio out/HP_CPN : C33.2() U8.9(CPN)
+/Audio out/HP_CPP : C33.1() U8.11(CPP)
+/Audio out/HP_L_IN : C22.2() U8.1(INL-)
+/Audio out/HP_R_IN : C28.2() U8.4(INR-)
+/Audio out/INV_L : R25.2() R26.1() U7.2(-)
+/Audio out/INV_R : R35.2() R36.1() U7.6(-)
+/Audio out/PHONE_L : J5.T() U8.16(OUTL)
+/Audio out/PHONE_R : J5.R() U8.5(OUTR)
+/Audio out/SLEEVE_L : J2.S() R31.1()
+/Audio out/SLEEVE_R : J3.S() R41.1()
+/Audio out/VOL_L_IN : C21.2() J4.1(Pin_1)
+/Audio out/VOL_L_W : C22.1() J4.2(Pin_2)
+/Audio out/VOL_R_IN : C27.2() J4.4(Pin_4)
+/Audio out/VOL_R_W : C28.1() J4.5(Pin_5)
+/Audio out/VREF : C37.1() C38.1() R43.2() R44.1() U6.3(+) U6.5(+) U7.3(+) U7.5(+)
+/Controller/SPARE_GP13 : J1.3(Pin_3) U2.17(GP13)
+/Front panel/LCD_SCL : J6.4(Pin_4) Q2.3(D) R50.2()
+/Front panel/LCD_SDA : J6.3(Pin_3) Q1.3(D) R48.2()
+/Power/VA_IN : C4.1() C5.1() L1.2(2) U1.1(IN) U1.3(EN)
+/Power/VA_RAW : FB2.2() L1.1(1)
+/Sound chip/LED_WIN1 : D1.2(A) R19.2()
+/Sound chip/LED_WIN2 : D2.2(A) R20.2()
+/Sound chip/OSC_OUT : R18.1() X1.5(OUT)
+/Sound chip/YMB_A0 : R13.1() U4.18(Y0)
+/Sound chip/YMB_A1 : R14.1() U4.17(Y1)
+/Sound chip/YMB_CLK : R17.1() U4.14(Y4)
+/Sound chip/YMB_D0 : R5.1() U3.18(Y0)
+/Sound chip/YMB_D1 : R6.1() U3.17(Y1)
+/Sound chip/YMB_D2 : R7.1() U3.16(Y2)
+/Sound chip/YMB_D3 : R8.1() U3.15(Y3)
+/Sound chip/YMB_D4 : R9.1() U3.14(Y4)
+/Sound chip/YMB_D5 : R10.1() U3.13(Y5)
+/Sound chip/YMB_D6 : R11.1() U3.12(Y6)
+/Sound chip/YMB_D7 : R12.1() U3.11(Y7)
+/Sound chip/YMB_IC : R16.1() U4.15(Y3)
+/Sound chip/YMB_WR : R15.1() U4.16(Y2)
+/Sound chip/YM_A0 : R13.2() U5.17(A0)
+/Sound chip/YM_A1 : R14.2() U5.18(A1)
+/Sound chip/YM_AVCC : C15.1() C16.1() R21.2() U5.22(A.VCC)
+/Sound chip/YM_D0 : R5.2() U5.2(D0)
+/Sound chip/YM_D1 : R6.2() U5.3(D1)
+/Sound chip/YM_D2 : R7.2() U5.4(D2)
+/Sound chip/YM_D3 : R8.2() U5.5(D3)
+/Sound chip/YM_D4 : R9.2() U5.6(D4)
+/Sound chip/YM_D5 : R10.2() U5.7(D5)
+/Sound chip/YM_D6 : R11.2() U5.8(D6)
+/Sound chip/YM_D7 : R12.2() U5.9(D7)
+/Sound chip/YM_IC : R16.2() U5.11(~{IC})
+/Sound chip/YM_WR : R15.2() U5.15(~{WR})
+BTN_EDIT : SW5.1(1) U2.26(GP20)
+BTN_EXIT : SW6.1(1) U2.29(GP22)
+BTN_LEFT : SW3.1(1) U2.24(GP18)
+BTN_PLAY : SW1.1(1) U2.21(GP16)
+BTN_RIGHT : SW4.1(1) U2.25(GP19)
+BTN_STOP : SW2.1(1) U2.22(GP17)
+BTN_WRITE : SW7.1(1) U2.31(GP26)
+ENC_A : C39.1() R45.2() SW8.A(A) U2.32(GP27)
+ENC_B : C40.1() R46.2() SW8.B(B) U2.34(GP28)
+GND : C1.2() C10.2() C11.2() C12.2() C13.2() C14.2() C15.2() C16.2() C2.2() C29.2() C3.2() C30.2() C31.2() C32.2() C34.2() C35.2() C36.2() C37.2() C38.2() C39.2() C4.2() C40.2() C41.2() C42.2() C5.2() C6.2() C7.2() C8.2() C9.2() D1.1(K) D2.1(K) J1.4(Pin_4) J4.3(Pin_3) J4.6(Pin_6) J5.S() J6.1(Pin_1) R2.2() R22.2() R28.2() R3.2() R30.2() R31.2() R32.2() R38.2() R4.2() R40.2() R41.2() R42.2() R44.2() SW1.2(2) SW2.2(2) SW3.2(2) SW4.2(2) SW5.2(2) SW6.2(2) SW7.2(2) SW8.C(C) TP14.1(1) TP15.1(1) U1.2(GND) U2.13(GND) U2.18(GND) U2.23(GND) U2.28(GND) U2.3(GND) U2.33(AGND) U2.38(GND) U2.8(GND) U3.1(G1) U3.10(GND) U3.19(G2) U4.1(G1) U4.10(GND) U4.19(G2) U4.7(A5) U4.8(A6) U4.9(A7) U5.1(GND) U5.12(GND) U5.14(~{CS}) U5.19(A.GND) U6.4(V-) U7.4(V-) U8.10(PGND) U8.15(SGND) U8.17(EP) U8.2(INL+) U8.3(INR+) U8.6(G0) U8.7(G1) X1.4(GND)
+HP_EN : J1.2(Pin_2) R42.1() U2.16(GP12) U8.13(EN)
+I2C_SCL : Q2.2(S) R49.2() U2.20(GP15)
+I2C_SDA : Q1.2(S) R47.2() U2.19(GP14)
+MCU_A0 : R3.1() TP9.1(1) U2.11(GP8) U4.2(A0)
+MCU_A1 : R4.1() TP10.1(1) U2.12(GP9) U4.3(A1)
+MCU_CLK : U2.27(GP21) U4.6(A4)
+MCU_D0 : TP1.1(1) U2.1(GP0) U3.2(A0)
+MCU_D1 : TP2.1(1) U2.2(GP1) U3.3(A1)
+MCU_D2 : TP3.1(1) U2.4(GP2) U3.4(A2)
+MCU_D3 : TP4.1(1) U2.5(GP3) U3.5(A3)
+MCU_D4 : TP5.1(1) U2.6(GP4) U3.6(A4)
+MCU_D5 : TP6.1(1) U2.7(GP5) U3.7(A5)
+MCU_D6 : TP7.1(1) U2.9(GP6) U3.8(A6)
+MCU_D7 : TP8.1(1) U2.10(GP7) U3.9(A7)
+MCU_IC : R2.1() TP12.1(1) U2.15(GP11) U4.5(A3)
+MCU_WR : R1.2() TP11.1(1) U2.14(GP10) U4.4(A2)
+YM_CLK : R17.2() R18.2() TP13.1(1) U5.24(ΦM)
+YM_MOL : C17.1() R22.1() U5.20(MOL)
+YM_MOR : C23.1() R32.1() U5.21(MOR)
+unconnected-(J2-PadRN) : J2.RN()
+unconnected-(J2-PadTN) : J2.TN()
+unconnected-(J3-PadRN) : J3.RN()
+unconnected-(J3-PadTN) : J3.TN()
+unconnected-(U1-NC-Pad4) : U1.4(NC)
+unconnected-(U2-3V3_EN-Pad37) : U2.37(3V3_EN)
+unconnected-(U2-ADC_VREF-Pad35) : U2.35(ADC_VREF)
+unconnected-(U2-RUN-Pad30) : U2.30(RUN)
+unconnected-(U2-VSYS-Pad39) : U2.39(VSYS)
+unconnected-(U4-Y5-Pad13) : U4.13(Y5)
+unconnected-(U4-Y6-Pad12) : U4.12(Y6)
+unconnected-(U4-Y7-Pad11) : U4.11(Y7)
+unconnected-(U5-NC-Pad10) : U5.10(NC)
+unconnected-(U5-~{IRQ}-Pad13) : U5.13(~{IRQ})
